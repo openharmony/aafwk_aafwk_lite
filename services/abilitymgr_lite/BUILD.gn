@@ -32,6 +32,12 @@ lite_library("abilityms") {
       defines = [ "AMS_TASK_STACK_SIZE=$config_ohos_aafwk_ams_task_size" ]
     }
 
+    if (defined(config_ohos_aafwk_aafwk_lite_task_stack_size) &&
+        config_ohos_aafwk_aafwk_lite_task_stack_size > 0) {
+      defines +=
+          [ "TASK_STACK_SIZE=$config_ohos_aafwk_aafwk_lite_task_stack_size" ]
+    }
+
     deps = [
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_static",
       "//foundation/ace/ace_engine_lite/frameworks:ace_lite",

@@ -40,8 +40,6 @@ namespace OHOS {
 constexpr char LAUNCHER_BUNDLE_NAME[] = "com.huawei.launcher";
 constexpr uint16_t LAUNCHER_TOKEN = 0;
 constexpr int32_t QUEUE_LENGTH = 32;
-constexpr int32_t SIZE_COEFFICIENT = 12;
-constexpr int32_t TASK_STACK_SIZE = 0x400 * SIZE_COEFFICIENT;
 constexpr int32_t APP_TASK_PRI = 25;
 
 AbilityService::LifecycleFuncStr AbilityService::lifecycleFuncList_[] = {
