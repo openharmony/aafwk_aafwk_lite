@@ -213,7 +213,7 @@ int32_t AbilityService::StartAbility(AbilitySvcInfo *info)
 
 int32_t AbilityService::TerminateAbility(uint16_t token)
 {
-    HILOG_INFO(HILOG_MODULE_AAFWK, "TerminateAbility [%u]", token);
+    HILOG_INFO(HILOG_MODULE_AAFWK, "TerminateAbility [%{public}u]", token);
     AbilityRecord *topRecord = const_cast<AbilityRecord *>(abilityStack_.GetTopAbility());
     if (topRecord == nullptr) {
         APP_ERRCODE_EXTRA(EXCE_ACE_APP_START, EXCE_ACE_APP_STOP_NO_ABILITY_RUNNING);
@@ -224,7 +224,7 @@ int32_t AbilityService::TerminateAbility(uint16_t token)
     if (token == LAUNCHER_TOKEN) {
         // if js is in background, the launcher goes back to background and js goes to active
         if (topToken != token && topRecord->GetState() == SCHEDULE_BACKGROUND) {
-            HILOG_INFO(HILOG_MODULE_AAFWK, "Resume Js app [%u]", topToken);
+            HILOG_INFO(HILOG_MODULE_AAFWK, "Resume Js app [%{public}u]", topToken);
             return SchedulerLifecycle(LAUNCHER_TOKEN, STATE_BACKGROUND);
         }
         return ERR_OK;
@@ -242,7 +242,7 @@ int32_t AbilityService::TerminateAbility(uint16_t token)
 
 int32_t AbilityService::ForceStopBundle(uint16_t token)
 {
-    HILOG_INFO(HILOG_MODULE_AAFWK, "ForceStopBundle [%u]", token);
+    HILOG_INFO(HILOG_MODULE_AAFWK, "ForceStopBundle [%{public}u]", token);
     if (token == LAUNCHER_TOKEN) {
         HILOG_INFO(HILOG_MODULE_AAFWK, "Launcher does not support force stop.");
         return ERR_OK;
@@ -275,12 +275,12 @@ int32_t AbilityService::ForceStop(char* bundlename)
     //stop js app
     if (strcmp(abilityStack_.GetTopAbility()->GetAppName(), bundlename) == 0) {
         AbilityRecord *topRecord = const_cast<AbilityRecord *>(abilityStack_.GetTopAbility());
-        HILOG_INFO(HILOG_MODULE_AAFWK, "ForceStop [%u]", topRecord->GetToken());
+        HILOG_INFO(HILOG_MODULE_AAFWK, "ForceStop [%{public}u]", topRecord->GetToken());
         return TerminateAbility(topRecord->GetToken());
 #ifndef __LITEOS_M__
     } else {
         uint16_t size = abilityStack_.GetAllAbilities();
-        HILOG_INFO(HILOG_MODULE_AAFWK, "ForceStop innerStack mumber is [%u]", size);
+        HILOG_INFO(HILOG_MODULE_AAFWK, "ForceStop innerStack mumber is [%{public}u]", size);
         //topAbility may be not the targert, need to search the abilityStack_
         AbilityRecord *jsAbilityRecord = const_cast<AbilityRecord *>(abilityStack_.GetAbility(bundlename));
         if (jsAbilityRecord != nullptr) {
@@ -381,7 +381,7 @@ int32_t AbilityService::CreateAppTask(AbilityRecord *record)
     UINT32 appTaskId = 0;
     UINT32 ret = LOS_TaskCreate(&appTaskId, &stTskInitParam);
     if (ret != LOS_OK) {
-        HILOG_ERROR(HILOG_MODULE_AAFWK, "CreateAppTask fail: ret = %d", ret);
+        HILOG_ERROR(HILOG_MODULE_AAFWK, "CreateAppTask fail: ret = %{public}d", ret);
         APP_ERRCODE_EXTRA(EXCE_ACE_APP_START, EXCE_ACE_APP_START_CREATE_TSAK_FAILED);
         delete jsAppHost;
         LOS_TaskUnlock();
@@ -456,7 +456,7 @@ void AbilityService::DeleteRecordInfo(uint16_t token)
 
 void AbilityService::OnActiveDone(uint16_t token)
 {
-    HILOG_INFO(HILOG_MODULE_AAFWK, "OnActiveDone [%u]", token);
+    HILOG_INFO(HILOG_MODULE_AAFWK, "OnActiveDone [%{public}u]", token);
     SetAbilityState(token, SCHEDULE_ACTIVE);
     auto topRecord = const_cast<AbilityRecord *>(abilityStack_.GetTopAbility());
     if (topRecord == nullptr) {
@@ -489,7 +489,7 @@ void AbilityService::OnActiveDone(uint16_t token)
 
 void AbilityService::OnBackgroundDone(uint16_t token)
 {
-    HILOG_INFO(HILOG_MODULE_AAFWK, "OnBackgroundDone [%u]", token);
+    HILOG_INFO(HILOG_MODULE_AAFWK, "OnBackgroundDone [%{public}u]", token);
     SetAbilityState(token, SCHEDULE_BACKGROUND);
     auto topRecord = const_cast<AbilityRecord *>(abilityStack_.GetTopAbility());
     if (topRecord == nullptr) {
@@ -519,7 +519,7 @@ void AbilityService::OnBackgroundDone(uint16_t token)
 
 void AbilityService::OnDestroyDone(uint16_t token)
 {
-    HILOG_INFO(HILOG_MODULE_AAFWK, "OnDestroyDone [%u]", token);
+    HILOG_INFO(HILOG_MODULE_AAFWK, "OnDestroyDone [%{public}u]", token);
     // the launcher destroy
     if (token == LAUNCHER_TOKEN) {
         SetAbilityState(token, SCHEDULE_STOP);
