@@ -15,7 +15,7 @@
 
 #include "ability_connect_mission.h"
 
-#include <string.h>
+#include <cstring>
 
 #include "util/abilityms_log.h"
 

@@ -137,9 +137,9 @@ void AbilityMgrFeature::OnRequestCallback(const void *data, int32_t ret)
     if (transRet != LITEIPC_OK) {
         HILOG_ERROR(HILOG_MODULE_APP, "AbilityMgrFeature InnerSelfTransact fialed %{public}d\n", ret);
     }
-    #ifdef __LINUX__
-        BinderRelease(svc_.ipcContext, svc_.handle);
-    #endif
+#ifdef __LINUX__
+    BinderRelease(svc_.ipcContext, svc_.handle);
+#endif
 }
 
 int32 AbilityMgrFeature::StartAbilityInvoke(const void *origin, IpcIo *req)
@@ -210,7 +210,8 @@ int32 AbilityMgrFeature::StartAbility(const Want *want)
     return StartAbilityInner(want, -1);
 }
 
-int32 AbilityMgrFeature::StartRemoteAbilityInner(const Want *want, const char *deviceId, pid_t uid, OnRequestCallbackFunc callback)
+int32 AbilityMgrFeature::StartRemoteAbilityInner(const Want *want, const char *deviceId,
+    pid_t uid, OnRequestCallbackFunc callback)
 {
     IUnknown *iUnknown = SAMGR_GetInstance()->GetFeatureApi(DISTRIBUTED_SCHEDULE_SERVICE, DMSLITE_FEATURE);
     DmsProxy *dmsInterface = NULL;

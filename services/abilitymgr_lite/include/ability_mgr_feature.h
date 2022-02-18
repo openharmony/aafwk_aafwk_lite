@@ -50,7 +50,8 @@ public:
 private:
     AbilityMgrFeature();
     static int32 StartAbilityInner(const Want *want, pid_t callingUid);
-    static int32 StartRemoteAbilityInner(const Want *want, const char *deviceId, pid_t uid, OnRequestCallbackFunc callback);
+    static int32 StartRemoteAbilityInner(const Want *want, const char *deviceId,
+                                        pid_t uid, OnRequestCallbackFunc callback);
     static int32 ConnectAbilityInner(const Want *want, SvcIdentity *svc, uint64_t token, pid_t callingUid);
     static int32 StopAbilityInner(const Want *want, pid_t callingUid);
     static int32 StartAbilityInvoke(const void *origin, IpcIo *req);

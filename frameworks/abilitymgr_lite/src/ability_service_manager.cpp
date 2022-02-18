@@ -41,7 +41,8 @@ AbilityServiceManager::~AbilityServiceManager()
     storeList_.clear();
 }
 
-int AbilityServiceManager::ConnectAbility(const Want &want, const IAbilityConnection &conn, uint64_t token, void *storeArg)
+int AbilityServiceManager::ConnectAbility(const Want &want, const IAbilityConnection &conn,
+                                          uint64_t token, void *storeArg)
 {
     if (conn.OnAbilityDisconnectDone == nullptr || conn.OnAbilityConnectDone == nullptr) {
         HILOG_INFO(HILOG_MODULE_APP, "IAbilityConnection callback func is null");

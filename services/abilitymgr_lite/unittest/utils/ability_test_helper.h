@@ -30,14 +30,14 @@ namespace OHOS {
     };
 
     class AbilityTestHelper {
-        public:
+    public:
         AbilityTestHelper() = delete;
         ~AbilityTestHelper() = delete;
         static void Initialize();
         static void UnInitialize();
 
-        static void InstallCallback(uint8_t resultCode, const void *resultMessage);
-        static void UninstallCallback(uint8_t resultCode, const void *resultMessage);
+        static void InstallCallback(const uint8_t resultCode, const void *resultMessage);
+        static void UninstallCallback(const uint8_t resultCode, const void *resultMessage);
         static int32_t AbilityCallback(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg);
         static bool TestInstall(const std::string &hap);
         static bool TestUnInstall(const std::string &bundleName);
@@ -46,7 +46,7 @@ namespace OHOS {
         static State GetAbilityState(const ElementName &elementName);
         static std::list<std::shared_ptr<SliceRecord>> GetSliceStack(const ElementName &elementName);
 
-        private:
+    private:
         static IClientProxy *GetAbilityInnerFeature();
         static void TestDumpAbility(const ElementName &elementName);
         static void SemWait();

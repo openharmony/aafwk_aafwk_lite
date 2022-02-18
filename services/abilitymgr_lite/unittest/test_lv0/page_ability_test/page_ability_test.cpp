@@ -27,31 +27,31 @@ namespace OHOS {
     static ElementName g_element = {};
 
     class PageAbilityTest : public testing::Test {
-      public :
-          static void SetUpTestCase()
-          {
-              AbilityTestHelper::Initialize();
-          }
+    public:
+        static void SetUpTestCase()
+        {
+            AbilityTestHelper::Initialize();
+        }
 
-          static void TearDownTestCase()
-          {
-              AbilityTestHelper::UnInitialize();
-          }
+        static void TearDownTestCase()
+        {
+            AbilityTestHelper::UnInitialize();
+        }
 
-          void SetUp() override
-          {
-              SetElementBundleName(&g_element, BUNDLE_NAME);
-              SetElementAbilityName(&g_element, ABILITY_NAME);
-              SetWantElement(&g_want, g_element);
-          }
+        void SetUp() override
+        {
+            SetElementBundleName(&g_element, BUNDLE_NAME);
+            SetElementAbilityName(&g_element, ABILITY_NAME);
+            SetWantElement(&g_want, g_element);
+        }
 
-          void TearDown() override
-          {
-              ASSERT_TRUE(AbilityTestHelper::TestTerminateApp(g_element.bundleName));
-              ASSERT_NE(STATE_ACTIVE, AbilityTestHelper::GetAbilityState(g_element));
-              ClearElement(&g_element);
-              ClearWant(&g_want);
-          }
+        void TearDown() override
+        {
+            ASSERT_TRUE(AbilityTestHelper::TestTerminateApp(g_element.bundleName));
+            ASSERT_NE(STATE_ACTIVE, AbilityTestHelper::GetAbilityState(g_element));
+            ClearElement(&g_element);
+            ClearWant(&g_want);
+        }
     };
 
     /**
@@ -67,10 +67,5 @@ namespace OHOS {
          * @tc.expected: step1. Start ability success.
          */
         ASSERT_TRUE(AbilityTestHelper::TestStartAbility(g_want));
-
-        /**
-         * @tc.expected: step1. Ability state is STATE_ACTIVE.
-         */
-        //ASSERT_NE(STATE_ACTIVE, AbilityTestHelper::GetAbilityState(g_element));
     }
 } // namespace OHOS

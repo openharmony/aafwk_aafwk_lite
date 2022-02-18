@@ -143,7 +143,7 @@ private:
 
 #define CHECK_RESULT_LOG_CODE(status, code)  \
     do {                                     \
-        if (!status.IsOk()) {                \
+        if (!((status).IsOk())) {                \
             status.LogStatus();              \
             return code;                     \
         }                                    \
@@ -151,7 +151,7 @@ private:
 
 #define CHECK_RESULT_LOG(status)       \
     do {                               \
-        if (!status.IsOk()) {          \
+        if (!((status).IsOk())) {          \
             status.LogStatus();        \
             return;                    \
         }                              \
@@ -159,7 +159,7 @@ private:
 
 #define CHECK_RESULT(status)           \
     do {                               \
-        if (!status.IsOk()) {          \
+        if (!((status).IsOk())) {          \
             return status;             \
         }                              \
     } while (0)

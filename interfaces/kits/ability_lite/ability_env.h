@@ -51,21 +51,21 @@ extern "C" {
  *
  * @return Returns the pointer to the bundle name if the operation is successful; returns a null pointer otherwise.
  */
-const char *GetBundleName();
+const char *GetBundleName(void);
 
 /**
  * @brief Obtains the source code path of this ability.
  *
  * @return Returns the pointer to the source code path of this ability.
  */
-const char *GetSrcPath();
+const char *GetSrcPath(void);
 
 /**
  * @brief Obtains the data path of this ability.
  *
  * @return Returns the pointer to the data path of this ability.
  */
-const char *GetDataPath();
+const char *GetDataPath(void);
 
 #ifdef __cplusplus
 #if __cplusplus

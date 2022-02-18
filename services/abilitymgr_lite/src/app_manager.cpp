@@ -16,8 +16,8 @@
 #include "app_manager.h"
 
 #define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-#include <string.h>
+#include <cinttypes>
+#include <cstring>
 
 #include "token_generate.h"
 #include "util/abilityms_log.h"
