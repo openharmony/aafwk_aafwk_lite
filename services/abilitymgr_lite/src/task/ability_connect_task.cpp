@@ -69,8 +69,7 @@ AbilityMsStatus AbilityConnectTask::PerformConnectTask(PageAbilityRecord *servic
             }
             break;
         }
-        case ConnectStatus::CONNECTED:
-        {
+        case ConnectStatus::CONNECTED: {
             if (connectRecord->GetStatus() == ConnectStatus::CONNECTING) {
                 PRINTI("AbilityConnectTask", "service status has connected, connection is connecting");
                 abilityMsStatus = service->ConnectAbilityDone();

@@ -13,21 +13,23 @@
  * limitations under the License.
  */
 
+#include <securec.h>
+#include <cassert>
 #include "ability_manager.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-#include <securec.h>
-#include <assert.h>
 #include "ability_errors.h"
 
 #define GET_PARAMS(env, info, num) \
+    do {                           \
     size_t argc = num;             \
     napi_value argv[num];          \
     napi_value thisVar;            \
     void* data;                    \
-    napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, &data) \
+    while (0)
 
-typedef struct _SetTimeAsyncContext {
+using struct _SetTimeAsyncContext {
     napi_env env;
     napi_async_work work;
 
@@ -42,7 +44,7 @@ static int JSAafwkStartAbility(napi_env env, napi_callback_info info)
 {
     napi_status status;
     size_t argc = 1;
-    napi_value args[1] = {0};;
+    napi_value args[1] = {0};
     status = napi_get_cb_info(env, info, &argc, args, NULL, NULL);
     assert(status == napi_ok);
     
@@ -96,7 +98,6 @@ static bool GetWantFromNapiValue(napi_env env, napi_value args, Want& want)
     napi_value data;
     napi_get_named_property(env, args, "want_param", &data);
 
-    // napi_has_named_property(env, arg, "audioSourceType", &bIsPresent);
     napi_value elementName;
     if (napi_get_named_property(env, args, "elementName", &elementName) != napi_ok) {
         return COMMAND_ERROR;
@@ -109,8 +110,7 @@ static bool GetWantFromNapiValue(napi_env env, napi_value args, Want& want)
     SetElementDeviceID(&element, deviceId);
     free(deviceId);
     deviceId = nullptr;
-    
-    
+
     napi_value napi_bundleName;
     napi_get_named_property(env, elementName, "bundleName", &napi_bundleName);
     char *bundleName = nullptr;
@@ -155,6 +155,7 @@ static bool GetCharPointerArgument(napi_env env, napi_value value, char* result)
 }
 
 EXTERN_C_START
+using namespace OHOS {
 napi_value AafwkExport(napi_env env, napi_value exports)
 {
     static napi_property_descriptor desc[] = {
@@ -163,6 +164,7 @@ napi_value AafwkExport(napi_env env, napi_value exports)
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;
+}
 }
 EXTERN_C_END
 

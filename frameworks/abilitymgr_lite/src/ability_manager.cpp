@@ -41,7 +41,8 @@ int StartAbilityWithCallback(const Want *want, IAbilityStartCallback iAbilitySta
         HILOG_ERROR(HILOG_MODULE_APP, "want or callback is null, StartAbilityWithCallback failed!");
         return -1;
     }
-    const SvcIdentity *svc = OHOS::AbilitySelfCallback::GetInstance().RegisterAbilitySelfCallback(iAbilityStartCallback);
+    const SvcIdentity *svc = OHOS::AbilitySelfCallback::GetInstance()
+                             .RegisterAbilitySelfCallback(iAbilityStartCallback);
     if (svc == nullptr) {
         HILOG_ERROR(HILOG_MODULE_APP, "Register svc failed");
         return -1;

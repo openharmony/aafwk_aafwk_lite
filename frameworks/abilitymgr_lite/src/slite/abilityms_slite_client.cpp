@@ -23,7 +23,6 @@
 #include "cmsis_os2.h"
 #include "samgr_lite.h"
 #include "securec.h"
-#include "unistd.h"
 #include "want_utils.h"
 #include "utils.h"
 

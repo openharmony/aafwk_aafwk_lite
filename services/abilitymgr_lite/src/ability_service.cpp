@@ -220,7 +220,6 @@ int32_t AbilityService::TerminateAbility(uint16_t token)
         return PARAM_NULL_ERROR;
     }
     uint16_t topToken = topRecord->GetToken();
-    // TODO CHECK terminate token
     if (token == LAUNCHER_TOKEN) {
         // if js is in background, the launcher goes back to background and js goes to active
         if (topToken != token && topRecord->GetState() == SCHEDULE_BACKGROUND) {
@@ -267,7 +266,7 @@ int32_t AbilityService::ForceStopBundle(uint16_t token)
 
 int32_t AbilityService::ForceStop(char* bundlename)
 {
-    //stop Launcher
+    // stop Launcher
     if (strcmp(bundlename, LAUNCHER_BUNDLE_NAME) == 0) {
         return TerminateAbility(0);
     }

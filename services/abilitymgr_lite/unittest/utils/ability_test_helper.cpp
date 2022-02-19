@@ -43,14 +43,12 @@ namespace OHOS {
 
     void AbilityTestHelper::Initialize()
     {
-        if (RegisterIpcCallback(AbilityCallback, 0, IPC_WAIT_FOREVER, &identity_, nullptr) != 0)
-        {
+        if (RegisterIpcCallback(AbilityCallback, 0, IPC_WAIT_FOREVER, &identity_, nullptr) != 0) {
             printf("registerIpcCallback failed\n");
             exit(-1);
         }
         proxy_ = GetAbilityInnerFeature();
-        if (proxy_ == nullptr)
-        {
+        if (proxy_ == nullptr) {
             exit(-1);
         }
         sleep(1);
@@ -65,8 +63,7 @@ namespace OHOS {
     void AbilityTestHelper::InstallCallback(const uint8_t resultCode, const void *resultMessage)
     {
         std::string strMessage = reinterpret_cast<const char *>(resultMessage);
-        if (!strMessage.empty())
-        {
+        if (!strMessage.empty()) {
             printf("install resultMessage is %s\n", strMessage.c_str());
         }
 
@@ -77,8 +74,7 @@ namespace OHOS {
     void AbilityTestHelper::UninstallCallback(const uint8_t resultCode, const void *resultMessage)
     {
         std::string strMessage = reinterpret_cast<const char *>(resultMessage);
-        if (!strMessage.empty())
-        {
+        if (!strMessage.empty()) {
             printf("[INFO] [AbilityTestHelper] uninstall resultMessage is %s\n", strMessage.c_str());
         }
         
@@ -88,8 +84,7 @@ namespace OHOS {
 
     int32_t AbilityTestHelper::AbilityCallback(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg)
     {
-        if (ipcMsg == nullptr)
-        {
+        if (ipcMsg == nullptr) {
             printf("ams call back error, ipcMsg is null\n");
             return -1;
         }
@@ -98,8 +93,7 @@ namespace OHOS {
         GetCode(ipcMsg, &funcId);
         uint32_t flag = 0;
         GetFlag(ipcMsg, &flag);
-        if (flag == LITEIPC_FLAG_ONEWAY)
-        {
+        if (flag == LITEIPC_FLAG_ONEWAY) {
             FreeBuffer(nullptr, ipcMsg);
         }
         switch (funcId)
@@ -140,8 +134,7 @@ namespace OHOS {
             .installLocation = 1,
             .keepData = false
         };
-        if (!Install(hap.c_str(), &installParam, InstallCallback))
-        {
+        if (!Install(hap.c_str(), &installParam, InstallCallback)) {
             printf("[ERROR] [AbilityTestHelper] Install hap failed!\n");
             exit(-1);
         }
@@ -187,13 +180,11 @@ namespace OHOS {
         TestDumpAbility(elementName);
 
         auto position = g_resultString.find(ABILITY_STATE);
-        if (position != std::string::npos)
-        {
+        if (position != std::string::npos) {
             return static_cast<State>(g_resultString[position + strlen(ABILITY_STATE)] - '0');
         }
 
-        if (g_resultString.find(NO_ABILITY) != std::string::npos)
-        {
+        if (g_resultString.find(NO_ABILITY) != std::string::npos) {
             return STATE_INITIAL;
         }
         printf("[ERROR] [AbilityTestHelper] Failed to GetAbilityState\n");
@@ -221,15 +212,13 @@ namespace OHOS {
     IClientProxy *AbilityTestHelper::GetAbilityInnerFeature()
     {
         IUnknown *iUnknown = SAMGR_GetInstance()->GetFeatureApi(AMS_SERVICE, AMS_INNER_FEATURE);
-        if (iUnknown == nullptr)
-        {
+        if (iUnknown == nullptr) {
             printf("ams inner unknown is null\n");
             return nullptr;
         }
         IClientProxy *innerProxy = nullptr;
         (void)iUnknown->QueryInterface(iUnknown, CLIENT_PROXY_VER, (void **)&innerProxy);
-        if (innerProxy == nullptr)
-        {
+        if (innerProxy == nullptr) {
             printf("ams inner feature is null\n");
             return nullptr;
         }
@@ -244,8 +233,7 @@ namespace OHOS {
         Want want = {};
         SetWantElement(&want, elementName);
         SetWantSvcIdentity(&want, identity_);
-        if (!SerializeWant(&req, &want))
-        {
+        if (!SerializeWant(&req, &want)) {
             printf("SerializeWant failed\n");
             ClearWant(&want);
             exit(-1);

@@ -101,8 +101,8 @@ Tlv *EncapTlv(uint8_t type, uint8_t length, const void *value, uint8_t valueLen)
         return nullptr;
     }
 
-    if (memcpy_s((unsigned char *)entity, 1, &type, 1) != 0 || 
-        memcpy_s((unsigned char *)entity + 1, 1, &length, 1) != 0 || 
+    if (memcpy_s((unsigned char *)entity, 1, &type, 1) != 0 ||
+        memcpy_s((unsigned char *)entity + 1, 1, &length, 1) != 0 ||
         memcpy_s((unsigned char *)entity + 2, valueLen, value, valueLen) != 0) {
         AdapterFree(entity);
         return nullptr;
@@ -129,7 +129,8 @@ Tlv *CombineKeyValueTlv(Tlv *keyTlv, Tlv *valueTlv)
         return nullptr;
     }
     if (memcpy_s((unsigned char *)newTlvValue, keyTlv->totalLen, keyTlv->entity, keyTlv->totalLen) != 0 ||
-        memcpy_s((unsigned char *)newTlvValue + keyTlv->totalLen, valueTlv->totalLen, valueTlv->entity, valueTlv->totalLen) != 0) {
+        memcpy_s((unsigned char *)newTlvValue + keyTlv->totalLen, valueTlv->totalLen,
+        valueTlv->entity, valueTlv->totalLen) != 0) {
         AdapterFree(newTlvValue);
         return nullptr;
     }
@@ -178,8 +179,9 @@ bool SetIntParam(Want *want, const char *key, uint8_t keyLen, int32_t value)
         FreeTlvStruct(keyTlv);
         return result;
     }
+    int intBufferbNumber = 4;
     unsigned char intBuffer[4] = {0};
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < intBufferbNumber; i++) {
         intBuffer[i] = value >> (8 * (3- i));
     }
     Tlv *valueTlv = EncapTlv(INT_VALUE_TYPE, sizeof(int), (void *)intBuffer, sizeof(int));
