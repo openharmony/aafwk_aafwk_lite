@@ -45,6 +45,10 @@ constexpr int32_t TASK_STACK_SIZE = 0x400 * SIZE_COEFFICIENT;
 constexpr int32_t APP_TASK_PRI = 25;
 SliteAbility *g_NativeAbility = nullptr;
 
+#ifdef AAFWK_STATIC_STACK_SPACE
+static uint8_t ptrStackSpace[TASK_STACK_SIZE];
+#endif
+
 AbilityService::AbilityService()
 {
 }
@@ -343,6 +347,9 @@ int32_t AbilityService::CreateAppTask(AbilityRecord *record)
     TSK_INIT_PARAM_S stTskInitParam = {0};
     stTskInitParam.pfnTaskEntry = (TSK_ENTRY_FUNC)(JsAppHost::JsAppTaskHandler);
     stTskInitParam.uwStackSize = TASK_STACK_SIZE;
+#ifdef AAFWK_STATIC_STACK_SPACE
+    stTskInitParam.pStackAddr = ptrStackSpace;
+#endif
     stTskInitParam.usTaskPrio = OS_TASK_PRIORITY_LOWEST - APP_TASK_PRI;
     stTskInitParam.pcName = const_cast<char *>("AppTask");
     stTskInitParam.uwResved = 0;
