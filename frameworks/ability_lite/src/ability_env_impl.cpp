@@ -24,7 +24,8 @@ void AbilityEnvImpl::SetAppInfo(const AppInfo& appInfo)
     dataPath_ = appInfo.dataPath;
     srcPath_ = appInfo.srcPath;
     if (!appInfo.isNativeApp && !appInfo.moduleNames.empty()) {
-        srcPath_ += PATH_SEPARATOR + appInfo.moduleNames.front();
+        std::string moduleName = appInfo.moduleNames.front();
+        srcPath_ += PATH_SEPARATOR + moduleName;
     }
 }
 
