@@ -14,7 +14,8 @@
  */
 
 #include "ability_service.h"
-
+#include "aafwk_event_error_id.h"
+#include "aafwk_event_error_code.h"
 #include "ability_errors.h"
 #include "ability_list.h"
 #include "ability_message_id.h"
