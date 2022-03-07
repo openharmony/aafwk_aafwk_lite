@@ -12,6 +12,7 @@
 # limitations under the License.
 import("//build/lite/config/component/lite_component.gni")
 import("//build/lite/config/subsystem/aafwk/config.gni")
+import("//build/lite/config/test.gni")
 import("//build/lite/ndk/ndk.gni")
 
 generate_notice_file("ability_notice_file") {
@@ -125,6 +126,15 @@ lite_component("aafwk_abilitykit_lite") {
   }
 
   features = [ ":ability" ]
+}
+
+unittest("ability_main_test_lv0") {
+  output_extension = "bin"
+  output_dir = "$root_out_dir/test/unittest/MainTest_lv0"
+
+  sources = [ "//foundation/aafwk/aafwk_lite/frameworks/ability_lite/unittest/ability_main_test.cpp" ]
+
+  include_dirs = [ "${aafwk_lite_path}/interfaces/innerkits/abilitymgr_lite" ]
 }
 
 config("abilitykit_config") {
