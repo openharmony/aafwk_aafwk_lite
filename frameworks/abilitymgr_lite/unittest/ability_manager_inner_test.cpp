@@ -18,7 +18,7 @@
 
 using namespace testing::ext;
 
-using int (*StartCheckFunc)(const char *bundleName);
+using StartCheckFunc = int (*)(const char *bundleName);
 
 namespace OHOS {
     class AbilityManagerInnerTest : public testing::Test {
