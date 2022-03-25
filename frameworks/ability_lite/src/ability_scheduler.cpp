@@ -77,11 +77,6 @@ int32_t AbilityScheduler::AmsCallback(const IpcContext* context, void *ipcMsg, I
                 }
             }
             scheduler->PerformAppInit(appInfo);
-            IpcIo reply;
-            uint8_t tmpData[DEFAULT_IPC_SIZE];
-            IpcIoInit(&reply, tmpData, DEFAULT_IPC_SIZE, 1);
-            IpcIoPushInt32(&reply, 0);
-            SendReply(nullptr, ipcMsg, &reply);
             break;
         }
         case SCHEDULER_ABILITY_LIFECYCLE: {
