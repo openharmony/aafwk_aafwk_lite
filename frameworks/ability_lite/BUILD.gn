@@ -111,9 +111,7 @@ lite_library("ability") {
     "./",
   ]
 
-  if (board_name == "hispark_taurus") {
-    defines += [ "OPENHARMONY_FONT_PATH" ]
-  }
+  defines += [ "OPENHARMONY_FONT_PATH" ]
 
   if (enable_ohos_appexecfwk_feature_ability == true) {
     defines += [ "ABILITY_WINDOW_SUPPORT" ]
