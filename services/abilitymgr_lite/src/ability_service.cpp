@@ -397,6 +397,7 @@ uint16_t AbilityService::GenerateToken()
 
 void AbilityService::DeleteRecordInfo(uint16_t token)
 {
+    HILOG_INFO(HILOG_MODULE_AAFWK, "DeleteRecordInfo [%{public}u]", token);
     AbilityRecord *record = abilityList_.Get(token);
     if (record == nullptr) {
         return;
