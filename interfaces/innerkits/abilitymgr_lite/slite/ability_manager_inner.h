@@ -16,7 +16,7 @@
 #ifndef OHOS_ABILITY_MANAGER_INNER_H
 #define OHOS_ABILITY_MANAGER_INNER_H
 
-#include "stdint.h"
+#include <cstdint>
 
 #include "element_name.h"
 
