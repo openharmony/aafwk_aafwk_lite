@@ -104,7 +104,6 @@ lite_library("ability") {
     "//foundation/communication/ipc_lite/frameworks/liteipc/include",
     "//foundation/communication/ipc_lite/interfaces/kits",
     "//third_party/bounds_checking_function/include",
-    "//third_party/freetype/include",
     "//utils/native/lite/kv_store/innerkits",
     "//utils/native/lite/include",
     "./include",
