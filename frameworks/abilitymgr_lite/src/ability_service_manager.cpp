@@ -21,6 +21,7 @@
 #include "ability_service_interface.h"
 #include "abilityms_client.h"
 #include "ohos_errno.h"
+#include "rpc_errno.h"
 #include "securec.h"
 #include "utils.h"
 #include "want.h"
@@ -33,7 +34,6 @@ AbilityServiceManager::~AbilityServiceManager()
             continue;
         }
         if (storeArgs->sid != nullptr) {
-            UnregisterIpcCallback(*(storeArgs->sid));
             delete storeArgs->sid;
         }
         delete storeArgs;
@@ -46,24 +46,24 @@ int AbilityServiceManager::ConnectAbility(const Want &want, const IAbilityConnec
 {
     if (conn.OnAbilityDisconnectDone == nullptr || conn.OnAbilityConnectDone == nullptr) {
         HILOG_INFO(HILOG_MODULE_APP, "IAbilityConnection callback func is null");
-        return LITEIPC_EINVAL;
+        return ERR_INVALID_PARAM;
     }
 
     StoreArgs *storeArgs = AddStoreArgs(conn, storeArg);
     if (storeArgs == nullptr) {
-        return LITEIPC_EINVAL;
+        return ERR_INVALID_PARAM;
     }
     AbilityMsClient::GetInstance().Initialize();
-    int32_t result = RegisterIpcCallback(ConnectAbilityCallBack, 0, IPC_WAIT_FOREVER, storeArgs->sid, storeArgs);
-    if (result != LITEIPC_OK) {
-        RemoveStoreArgs(nullptr, storeArgs);
-        delete storeArgs->sid;
-        delete storeArgs;
-        return result;
-    }
-    result = AbilityMsClient::GetInstance().ScheduleAms(&want, token, storeArgs->sid, CONNECT_ABILITY);
+
+    objectStub_.func = ConnectAbilityCallBack;
+    objectStub_.args = (void*)storeArgs;
+    objectStub_.isRemote = false;
+    storeArgs->sid->handle = IPC_INVALID_HANDLE;
+    storeArgs->sid->token = SERVICE_TYPE_ANONYMOUS;
+    storeArgs->sid->cookie = reinterpret_cast<uintptr_t>(&objectStub_);
+
+    int32_t result = AbilityMsClient::GetInstance().ScheduleAms(&want, token, storeArgs->sid, CONNECT_ABILITY);
     if (result != EC_SUCCESS) {
-        UnregisterIpcCallback(*(storeArgs->sid));
         RemoveStoreArgs(nullptr, storeArgs);
         delete storeArgs->sid;
         delete storeArgs;
@@ -76,7 +76,7 @@ int AbilityServiceManager::DisconnectAbility(const IAbilityConnection &conn, uin
     StoreArgs *storeArgs = RemoveStoreArgs(&conn, nullptr);
     if (storeArgs == nullptr) {
         HILOG_INFO(HILOG_MODULE_APP, "no need to disconnect");
-        return LITEIPC_EINVAL;
+        return ERR_INVALID_PARAM;
     }
     int result = AbilityMsClient::GetInstance().ScheduleAms(nullptr, token, storeArgs->sid, DISCONNECT_ABILITY);
 
@@ -121,26 +121,31 @@ StoreArgs *AbilityServiceManager::RemoveStoreArgs(const IAbilityConnection *conn
     return storeArgs;
 }
 
-int32_t AbilityServiceManager::ConnectAbilityCallBack(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg)
+int32_t AbilityServiceManager::ConnectAbilityCallBack(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
 {
     // param check
-    StoreArgs *storeArgs = static_cast<StoreArgs *>(arg);
-    if (storeArgs == nullptr || ipcMsg == nullptr || storeArgs->conn == nullptr ||
+    StoreArgs *storeArgs = static_cast<StoreArgs *>(option.args); 
+    if (storeArgs == nullptr || storeArgs->conn == nullptr ||
         storeArgs->conn->OnAbilityConnectDone == nullptr || storeArgs->conn->OnAbilityDisconnectDone == nullptr) {
         HILOG_ERROR(HILOG_MODULE_APP, "storeArgs or callback func or ipcMsg is null");
         AbilityServiceManager::GetInstance().RemoveStoreArgs(nullptr, storeArgs);
         ClearStore(storeArgs);
-        FreeBuffer(nullptr, ipcMsg);
-        return LITEIPC_EINVAL;
+        return ERR_INVALID_PARAM;
     }
 
-    // parse funcId
-    uint32_t funcId = 0;
-    GetCode(ipcMsg, &funcId);
-    int resultCode = (funcId != SCHEDULER_ABILITY_CONNECT_FAIL) ? 0 : -1;
-    // parse service sid
-    SvcIdentity *serviceSid = (funcId == SCHEDULER_ABILITY_CONNECT) ? IpcIoPopSvc(data) : nullptr;
-    if ((funcId == SCHEDULER_ABILITY_CONNECT) && (serviceSid == nullptr)) {
+    int resultCode = (code != SCHEDULER_ABILITY_CONNECT_FAIL) ? 0 : -1;
+
+    SvcIdentity *serviceSid = nullptr;
+    SvcIdentity svc;
+    if (code == SCHEDULER_ABILITY_CONNECT) {
+        // parse service sid
+        bool ret = ReadRemoteObject(data, &svc);
+        if (ret) {
+            serviceSid = &svc;
+        }
+    }
+
+    if ((code == SCHEDULER_ABILITY_CONNECT) && (serviceSid == nullptr)) {
         resultCode = -1;
     }
     // parse element
@@ -148,22 +153,18 @@ int32_t AbilityServiceManager::ConnectAbilityCallBack(const IpcContext* context,
     if (!DeserializeElement(&elementName, data)) {
         resultCode = -1;
     }
-    if (funcId == SCHEDULER_ABILITY_DISCONNECT) {
+    if (code == SCHEDULER_ABILITY_DISCONNECT) {
         storeArgs->conn->OnAbilityDisconnectDone(&elementName, resultCode, storeArgs->storeArg);
     } else {
         storeArgs->conn->OnAbilityConnectDone(&elementName, serviceSid, resultCode,  storeArgs->storeArg);
     }
-    if (funcId != SCHEDULER_ABILITY_CONNECT || resultCode == -1) {
+    if (code != SCHEDULER_ABILITY_CONNECT || resultCode == -1) {
         AbilityServiceManager::GetInstance().RemoveStoreArgs(nullptr, storeArgs);
         ClearStore(storeArgs);
     }
-#ifdef __LINUX__
-    AdapterFree(serviceSid);
-    serviceSid = nullptr;
-#endif
+
     ClearElement(&elementName);
-    FreeBuffer(nullptr, ipcMsg);
-    return LITEIPC_OK;
+    return ERR_NONE;
 }
 
 void AbilityServiceManager::ClearStore(StoreArgs *storeArgs)
@@ -172,7 +173,6 @@ void AbilityServiceManager::ClearStore(StoreArgs *storeArgs)
         HILOG_INFO(HILOG_MODULE_APP, "no need to clear storeArgs");
         return;
     }
-    UnregisterIpcCallback(*(storeArgs->sid));
     delete storeArgs->sid;
     delete storeArgs;
 }

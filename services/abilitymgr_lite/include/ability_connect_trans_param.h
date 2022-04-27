@@ -19,7 +19,7 @@
 #include <sched.h>
 #include <stdlib.h>
 
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "want.h"
 
 namespace OHOS {

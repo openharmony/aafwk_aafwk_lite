@@ -18,7 +18,8 @@
 #include <cstdio>
 #include <cstring>
 #include <ohos_errno.h>
-#include <liteipc_adapter.h>
+#include <ctime>
+#include "ipc_skeleton.h"
 #include <samgr_lite.h>
 #include <securec.h>
 #include <semaphore.h>
@@ -45,7 +46,6 @@ static sem_t g_sem;
 AbilityTool::~AbilityTool()
 {
     ClearElement(&elementName_);
-    UnregisterIpcCallback(identity_);
 }
 
 bool AbilityTool::SetBundleName(const char *bundleName)
@@ -110,10 +110,13 @@ bool AbilityTool::RunCommand()
         return false;
     }
 
-    if (RegisterIpcCallback(AbilityTool::AaCallback, 0, IPC_WAIT_FOREVER, &identity_, this) != 0) {
-        printf("registerIpcCallback failed\n");
-        return false;
-    }
+    objectStub_.func = AbilityTool::AaCallback;
+    objectStub_.args = (void*)this;
+    objectStub_.isRemote = false;
+    identity_.handle = IPC_INVALID_HANDLE;
+    identity_.token = SERVICE_TYPE_ANONYMOUS;
+    identity_.cookie = reinterpret_cast<uintptr_t>(&objectStub_);
+
     bool retVal = false;
     if (strcmp(command_, CMD_START_ABILITY) == 0) {
         retVal = InnerStartAbility();
@@ -188,9 +191,9 @@ bool AbilityTool::TerminateApp(IClientProxy *proxy) const
         return false;
     }
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, 0);
-    IpcIoPushString(&req, elementName_.bundleName);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, 0);
+    WriteString(&req, elementName_.bundleName);
     return proxy->Invoke(proxy, TERMINATE_APP, &req, nullptr, nullptr) == EC_SUCCESS;
 }
 
@@ -205,8 +208,8 @@ bool AbilityTool::Dump(IClientProxy *proxy)
     }
 
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, MAX_OBJECTS);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, MAX_OBJECTS);
     if (!SerializeWant(&req, want)) {
         printf("SerializeWant failed\n");
         ClearWant(want);
@@ -232,54 +235,27 @@ bool AbilityTool::Dump(IClientProxy *proxy)
     return true;
 }
 
-int32_t AbilityTool::AaCallback(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg)
+int32_t AbilityTool::AaCallback(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
 {
     printf("get ability info\n");
-    if (ipcMsg == nullptr) {
-        printf("ams call back error, ipcMsg is null\n");
-        return -1;
-    }
-    auto abilityTool = static_cast<AbilityTool *>(arg);
+    auto abilityTool = static_cast<AbilityTool *>(option.args);
     if (abilityTool == nullptr) {
         printf("ams call back error, abilityTool is null\n");
-        FreeBuffer(nullptr, ipcMsg);
         return -1;
     }
-
-    uint32_t funcId = 0;
-    GetCode(ipcMsg, &funcId);
-    uint32_t flag = 0;
-    GetFlag(ipcMsg, &flag);
-    switch (funcId) {
+    switch (code) {
         case SCHEDULER_APP_INIT: {
             ElementName element = {};
             DeserializeElement(&element, data);
-            int ret = IpcIoPopInt32(data);
+            int32_t ret = 0;
+            ReadInt32(data, &ret);
             printf("ams call back, start %s.%s ret = %d\n", element.bundleName, element.abilityName, ret);
             ClearElement(&element);
             break;
         }
         case SCHEDULER_DUMP_ABILITY: {
-#ifdef __LINUX__
             size_t len = 0;
-            char *result = reinterpret_cast<char *>(IpcIoPopString(data, &len));
-#else
-            BuffPtr *buff = IpcIoPopDataBuff(data);
-            if ((buff == nullptr) || (buff->buff == nullptr)) {
-                printf("ams call back error, buff is empty\n");
-                if (flag == LITEIPC_FLAG_ONEWAY) {
-                    FreeBuffer(nullptr, ipcMsg);
-                }
-                return false;
-            }
-            char *result = static_cast<char *>(buff->buff);
-            if ((buff->buffSz > 0) && (result[buff->buffSz - 1] != '\0')) {
-                printf("Wrong message format.\n}\n");
-                FreeBuffer(nullptr, buff->buff);
-                break;
-            }
-            int len = strlen(result);
-#endif
+            char *result = reinterpret_cast<char *>(ReadString(data, &len));
             printf("dump ability info:\n");
             if (!abilityTool->dumpAll_) {
                 printf("[%s][%s]\n", abilityTool->elementName_.bundleName, abilityTool->elementName_.abilityName);
@@ -291,18 +267,12 @@ int32_t AbilityTool::AaCallback(const IpcContext* context, void *ipcMsg, IpcIo *
                 printf("%-.*s", size, result + start);
             }
             printf("}\n");
-#ifndef __LINUX__
-            FreeBuffer(nullptr, buff->buff);
-#endif
             break;
         }
         default: {
-            printf("ams call back error, funcId: %u\n", funcId);
+            printf("ams call back error, funcId: %u\n", code);
             break;
         }
-    }
-    if (flag == LITEIPC_FLAG_ONEWAY) {
-        FreeBuffer(nullptr, ipcMsg);
     }
     sem_post(&g_sem);
     return 0;

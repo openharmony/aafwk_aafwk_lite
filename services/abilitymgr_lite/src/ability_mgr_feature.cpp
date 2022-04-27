@@ -25,6 +25,7 @@
 #include "adapter.h"
 #include "ohos_init.h"
 #include "iproxy_client.h"
+#include "rpc_errno.h"
 #include "samgr_lite.h"
 #include "securec.h"
 #include "util/abilityms_helper.h"
@@ -129,22 +130,23 @@ BOOL AbilityMgrFeature::OnFeatureMessage(Feature *feature, Request *request)
 void AbilityMgrFeature::OnRequestCallback(const void *data, int32_t ret)
 {
     IpcIo io;
-    char ipcData[IPC_IO_DATA_MAX];
+    char ipcData[MAX_IO_SIZE];
     IpcIo reply;
-    IpcIoInit(&io, ipcData, IPC_IO_DATA_MAX, 0);
-    IpcIoPushInt32(&io, static_cast<int32_t>(ret));
-    int32_t transRet = Transact(NULL, svc_, START_ABILITY_CALLBACK, &io, &reply, LITEIPC_FLAG_ONEWAY, NULL);
-    if (transRet != LITEIPC_OK) {
+    IpcIoInit(&io, ipcData, MAX_IO_SIZE, 0);
+    WriteInt32(&io, static_cast<int32_t>(ret));
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    int32_t transRet = SendRequest(svc_, START_ABILITY_CALLBACK, &io, &reply, option, NULL);
+    if (transRet != ERR_NONE) {
         HILOG_ERROR(HILOG_MODULE_APP, "AbilityMgrFeature InnerSelfTransact fialed %{public}d\n", ret);
     }
-#ifdef __LINUX__
-    BinderRelease(svc_.ipcContext, svc_.handle);
-#endif
+    ReleaseSvc(svc_);
 }
 
 int32 AbilityMgrFeature::StartAbilityInvoke(const void *origin, IpcIo *req)
 {
-    pid_t uid = GetCallingUid(origin);
+    pid_t uid = GetCallingUid();
     if (uid < 0) {
         PRINTE("AbilityMgrFeature", "invalid uid argument");
         return EC_INVALID;
@@ -171,22 +173,18 @@ int32 AbilityMgrFeature::StartAbilityInvoke(const void *origin, IpcIo *req)
 
 int32 AbilityMgrFeature::StartAbilityWithCbInvoke(const void *origin, IpcIo *req)
 {
-    pid_t uid = GetCallingUid(origin);
+    pid_t uid = GetCallingUid();
     if (uid < 0) {
         PRINTE("AbilityMgrFeature", "invalid uid argument");
         return EC_INVALID;
     }
-    SvcIdentity *svcIdentity = IpcIoPopSvc(req);
-    if (svcIdentity == nullptr) {
+    SvcIdentity svc;
+    bool ret = ReadRemoteObject(req, &svc);
+    if (!ret) {
         svc_ = {0};
         return EC_INVALID;
     }
-    svc_ = *svcIdentity;
-#ifdef __LINUX__
-    BinderAcquire(svc_.ipcContext, svc_.handle);
-    AdapterFree(svcIdentity);
-    svcIdentity = nullptr;
-#endif
+    svc_ = svc;
     Want want = { nullptr, nullptr, nullptr, 0};
     if (!DeserializeWant(&want, req)) {
         return EC_FAILURE;
@@ -273,7 +271,8 @@ int32 AbilityMgrFeature::StartAbilityInner(const Want *want, pid_t callingUid)
 
 int32 AbilityMgrFeature::TerminateAbilityInvoke(const void *origin, IpcIo *req)
 {
-    uint64_t token = IpcIoPopUint64(req);
+    uint64_t token = 0;
+    ReadUint64(req, &token);
     return TerminateAbility(token);
 }
 
@@ -297,8 +296,12 @@ int32 AbilityMgrFeature::TerminateAbility(uint64_t token)
 
 int32 AbilityMgrFeature::AbilityTransactionDoneInvoke(const void *origin, IpcIo *req)
 {
-    uint64_t token = IpcIoPopUint64(req);
-    int32 state = IpcIoPopInt32(req);
+    uint64_t token = 0;
+    ReadUint64(req, &token);
+    int32_t ret = 0;
+    ReadInt32(req, &ret);
+    int32 state = static_cast<int32>(ret);
+
     TransactionState *transactionState = new TransactionState();
     transactionState->token = token;
     transactionState->state = state;
@@ -318,32 +321,27 @@ int32 AbilityMgrFeature::AbilityTransactionDoneInvoke(const void *origin, IpcIo 
 
 int32 AbilityMgrFeature::AttachBundleInvoke(const void *origin, IpcIo *req)
 {
-    uint64_t token = IpcIoPopUint64(req);
-    SvcIdentity *svcIdentity = IpcIoPopSvc(req);
-    if (svcIdentity == nullptr) {
+    uint64_t token = 0;
+    ReadUint64(req, &token);
+    SvcIdentity svc;
+    bool ret = ReadRemoteObject(req, &svc);
+    if (!ret) {
         return EC_INVALID;
     }
+
 #ifdef __LINUX__
-    pid_t callingPid = IpcIoPopUint64(req);
+    uint64_t readData = 0;
+    ReadUint64(req, &readData);
+    pid_t callingPid = static_cast<pid_t>(readData);
 #else
-    pid_t callingPid = GetCallingPid(origin);
+    pid_t callingPid = GetCallingPid();
 #endif
     if (callingPid < 0) {
-#ifdef __LINUX__
-        AdapterFree(svcIdentity);
-        svcIdentity = nullptr;
-#endif
         PRINTE("AbilityMgrFeature", "invalid pid argument");
         return EC_INVALID;
     }
 
-    auto client = new AbilityThreadClient(token, callingPid,
-        *svcIdentity, &AbilityMgrFeature::AppDeathNotify);
-#ifdef __LINUX__
-    BinderAcquire(svcIdentity->ipcContext, svcIdentity->handle);
-    AdapterFree(svcIdentity);
-    svcIdentity = nullptr;
-#endif
+    auto client = new AbilityThreadClient(token, callingPid, svc, &AbilityMgrFeature::AppDeathNotify);
     Request request = {
         .msgId = AMS_ATTACH_BUNDLE,
         .len = 0,
@@ -360,26 +358,23 @@ int32 AbilityMgrFeature::AttachBundleInvoke(const void *origin, IpcIo *req)
 
 int32 AbilityMgrFeature::ConnectAbilityInvoke(const void *origin, IpcIo *req)
 {
-    pid_t uid = GetCallingUid(origin);
+    pid_t uid = GetCallingUid();
     if (uid < 0) {
         PRINTE("AbilityMgrFeature", "invalid uid argument");
         return EC_INVALID;
     }
-    uint64_t token = IpcIoPopUint64(req);
-    SvcIdentity* sid = IpcIoPopSvc(req);
+    uint64_t token = 0;
+    ReadUint64(req, &token);
+    SvcIdentity svc;
+    bool ret = ReadRemoteObject(req, &svc);
+    if (!ret) {
+        return EC_INVALID;
+    }
     Want want = { nullptr, nullptr, nullptr, 0 };
     if (!DeserializeWant(&want, req)) {
-#ifdef __LINUX__
-        AdapterFree(sid);
-        sid = nullptr;
-#endif
         return EC_FAILURE;
     }
-    int32 retVal = ConnectAbilityInner(&want, sid, token, uid);
-#ifdef __LINUX__
-    AdapterFree(sid);
-    sid = nullptr;
-#endif
+    int32 retVal = ConnectAbilityInner(&want, &svc, token, uid);
     ClearWant(&want);
     return retVal;
 }
@@ -405,9 +400,6 @@ int32 AbilityMgrFeature::ConnectAbilityInner(const Want *want, SvcIdentity *svc,
     if (want->sid != nullptr) {
         SetWantSvcIdentity(data, *(want->sid));
     }
-#ifdef __LINUX__
-    BinderAcquire(svc->ipcContext, svc->handle);
-#endif
     auto transParam = new AbilityConnectTransParam(data, *svc, token);
     transParam->SetCallingUid(callingUid);
     Request request = {
@@ -426,9 +418,14 @@ int32 AbilityMgrFeature::ConnectAbilityInner(const Want *want, SvcIdentity *svc,
 
 int32 AbilityMgrFeature::DisconnectAbilityInvoke(const void *origin, IpcIo *req)
 {
-    uint64_t token = IpcIoPopUint64(req);
-    SvcIdentity *sid = IpcIoPopSvc(req);
-    return DisconnectAbility(sid, token);
+    uint64_t token = 0;
+    ReadUint64(req, &token);
+    SvcIdentity svc;
+    bool ret = ReadRemoteObject(req, &svc);
+    if (!ret) {
+        return EC_INVALID;
+    }
+    return DisconnectAbility(&svc, token);
 }
 
 int32 AbilityMgrFeature::DisconnectAbility(SvcIdentity *svc, uint64_t token)
@@ -437,10 +434,6 @@ int32 AbilityMgrFeature::DisconnectAbility(SvcIdentity *svc, uint64_t token)
         return EC_INVALID;
     }
     auto transParam = new AbilityConnectTransParam(nullptr, *svc, token);
-#ifdef __LINUX__
-    AdapterFree(svc);
-    svc = nullptr;
-#endif
     Request request = {
         .msgId = AMS_DISCONNECT_ABILITY,
         .len = 0,
@@ -457,17 +450,15 @@ int32 AbilityMgrFeature::DisconnectAbility(SvcIdentity *svc, uint64_t token)
 
 int32 AbilityMgrFeature::ConnectAbilityDoneInvoke(const void *origin, IpcIo *req)
 {
-    uint64_t token = IpcIoPopUint64(req);
-    SvcIdentity *sid = IpcIoPopSvc(req);
-    if (sid == nullptr) {
+    uint64_t token = 0;
+    ReadUint64(req, &token);
+    SvcIdentity svc;
+    bool ret = ReadRemoteObject(req, &svc);
+    if (!ret) {
         return EC_INVALID;
     }
-    auto transParam = new AbilityConnectTransParam(nullptr, *sid, token);
-#ifdef __LINUX__
-    BinderAcquire(sid->ipcContext, sid->handle);
-    AdapterFree(sid);
-    sid = nullptr;
-#endif
+
+    auto transParam = new AbilityConnectTransParam(nullptr, svc, token);
     Request request = {
         .msgId = AMS_CONNECT_ABILITY_DONE,
         .len = 0,
@@ -485,7 +476,9 @@ int32 AbilityMgrFeature::ConnectAbilityDoneInvoke(const void *origin, IpcIo *req
 int32 AbilityMgrFeature::DisconnectAbilityDoneInvoke(const void *origin, IpcIo *req)
 {
     uint64_t *disconnectToken = new uint64_t;
-    *disconnectToken = IpcIoPopUint64(req);
+    uint64_t ret = 0;
+    ReadUint64(req, &ret);
+    *disconnectToken = ret;
     Request request = {
         .msgId = AMS_DISCONNECT_ABILITY_DONE,
         .len = 0,
@@ -502,7 +495,7 @@ int32 AbilityMgrFeature::DisconnectAbilityDoneInvoke(const void *origin, IpcIo *
 
 int32 AbilityMgrFeature::StopAbilityInvoke(const void *origin, IpcIo *req)
 {
-    pid_t uid = GetCallingUid(origin);
+    pid_t uid = GetCallingUid();
     if (uid < 0) {
         PRINTE("AbilityMgrFeature", "invalid uid argument");
         return EC_INVALID;
@@ -577,24 +570,21 @@ int32 AbilityMgrFeature::RestartApp(const char *bundleName)
     return EC_SUCCESS;
 }
 
-int32 AbilityMgrFeature::AppDeathNotify(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg)
+void AbilityMgrFeature::AppDeathNotify(void *args)
 {
-    AppInfo *appInfo = reinterpret_cast<AppInfo *>(arg);
+    AppInfo *appInfo = reinterpret_cast<AppInfo *>(args);
     if (appInfo == nullptr) {
-        return EC_INVALID;
+        return;
     }
-#ifdef __LINUX__
-    BinderRelease(appInfo->svcIdentity.ipcContext, appInfo->svcIdentity.handle);
-#endif
+    ReleaseSvc(appInfo->svcIdentity);
     if (!AbilityMsHelper::IsLegalBundleName(appInfo->bundleName)) {
         AdapterFree(appInfo->bundleName);
         delete appInfo;
-        return EC_INVALID;
+        return;
     }
     PRINTE("AbilityMgrFeature", "%s AppDeathNotify called", appInfo->bundleName);
     int32 ret = RestartApp(appInfo->bundleName);
     AdapterFree(appInfo->bundleName);
     delete appInfo;
-    return ret;
 }
 } // namespace OHOS

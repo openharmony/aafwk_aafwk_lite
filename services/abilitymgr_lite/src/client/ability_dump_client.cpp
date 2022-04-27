@@ -16,7 +16,8 @@
 #include "client/ability_dump_client.h"
 
 #include "ability_kit_command.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
+#include "rpc_errno.h"
 #include "securec.h"
 #include "util/abilityms_log.h"
 
@@ -53,18 +54,13 @@ AbilityMsStatus AbilityDumpClient::AbilityDumpTransaction(const char *info) cons
         info = "";
     }
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, 1);
-#ifdef __LINUX__
-    IpcIoPushString(&req, info);
-#else
-    BuffPtr buffPtr;
-    buffPtr.buff = const_cast<char *>(info);
-    buffPtr.buffSz = strlen(info) + 1;
-    IpcIoPushDataBuff(&req, &buffPtr);
-#endif
-    if (Transact(nullptr, *(want_.sid), SCHEDULER_DUMP_ABILITY, &req, nullptr,
-        LITEIPC_FLAG_ONEWAY, nullptr) != LITEIPC_OK) {
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, 1);
+    WriteString(&req, info);
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    if (SendRequest(*(want_.sid), SCHEDULER_DUMP_ABILITY, &req, nullptr, option, nullptr) != ERR_NONE) {
         return AbilityMsStatus::AppTransanctStatus("dump ability ipc error");
     }
     return AbilityMsStatus::Ok();

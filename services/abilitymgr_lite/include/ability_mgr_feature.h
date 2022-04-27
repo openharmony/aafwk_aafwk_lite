@@ -40,7 +40,7 @@ public:
 
     static int32 Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, IpcIo *reply);
 
-    static int32 AppDeathNotify(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg);
+    static void AppDeathNotify(void *args);
     static AbilityMgrFeature *GetInstance()
     {
         static AbilityMgrFeature instance;

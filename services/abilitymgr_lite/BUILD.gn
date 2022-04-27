@@ -87,7 +87,7 @@ lite_library("abilityms") {
     deps = [
       "${appexecfwk_lite_path}/frameworks/bundle_lite:bundle",
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-      "//foundation/communication/ipc_lite:liteipc_adapter",
+      "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
       "//foundation/distributedschedule/samgr_lite/samgr:samgr",
     ]
 
@@ -130,7 +130,7 @@ lite_library("abilityms") {
     "${appexecfwk_lite_path}/utils/bundle_lite",
     "${appexecfwk_lite_path}/interfaces/innerkits/bundlemgr_lite",
     "${appexecfwk_lite_path}/frameworks/bundle_lite/include",
-    "//foundation/communication/ipc_lite/interfaces/kits",
+    "//foundation/communication/ipc/interfaces/innerkits/c/ipc/include",
     "//foundation/distributedschedule/dmsfwk_lite/interfaces/innerkits",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",

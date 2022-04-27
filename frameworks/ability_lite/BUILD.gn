@@ -69,7 +69,7 @@ lite_library("ability") {
       "${aafwk_lite_path}/frameworks/abilitymgr_lite:abilitymanager",
       "${appexecfwk_lite_path}/frameworks/bundle_lite:bundle",
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-      "//foundation/communication/ipc_lite:liteipc_adapter",
+      "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
       "//utils/native/lite/kv_store:kv_store",
     ]
 
@@ -101,8 +101,7 @@ lite_library("ability") {
     "//foundation/graphic/surface/interfaces/kits",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
-    "//foundation/communication/ipc_lite/frameworks/liteipc/include",
-    "//foundation/communication/ipc_lite/interfaces/kits",
+    "//foundation/communication/ipc/interfaces/innerkits/c/ipc/include",
     "//third_party/bounds_checking_function/include",
     "//third_party/freetype/include",
     "//utils/native/lite/kv_store/innerkits",

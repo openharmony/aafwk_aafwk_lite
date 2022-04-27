@@ -19,7 +19,6 @@
 #include <climits>
 
 #include "ability_thread.h"
-#include "liteipc_pri.h"
 #include "log.h"
 
 namespace {
@@ -32,7 +31,6 @@ int AbilityMain(const char *token)
         return -1;
     }
 
-    ResetLiteIpc();
     char *endPtr = nullptr;
     errno = 0;
     uint64_t tokenId = std::strtoull(token, &endPtr, HEX);

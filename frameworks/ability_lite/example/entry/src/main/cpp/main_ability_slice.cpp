@@ -20,6 +20,7 @@
 #include "components/ui_label_button.h"
 #include "next_ability_slice.h"
 #include "root_view_helper.h"
+#include "rpc_errno.h"
 
 namespace OHOS {
 REGISTER_AS(MainAbilitySlice)
@@ -46,22 +47,25 @@ int32_t IpcMsgHandler(int funcId, ElementName *elementName, SvcIdentity *service
 
     // push data
     IpcIo request;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&request, data, IPC_IO_DATA_MAX, 0);
-    IpcIoPushInt32(&request, 10);
-    IpcIoPushInt32(&request, 6);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&request, data, MAX_IO_SIZE, 0);
+    WriteInt32(&request, 10);
+    WriteInt32(&request, 6);
 
     // send and getReply
     IpcIo reply;
     uintptr_t ptr = 0;
-    if (Transact(nullptr, *serviceSid, 0, &request, &reply, LITEIPC_FLAG_DEFAULT, &ptr) != LITEIPC_OK) {
-        printf("transact error\n");
+    MessageOption option;
+    MessageOptionInit(&option);
+    if (SendRequest(*serviceSid, 0, &request, &reply, option, &ptr) != ERR_NONE) {
+        printf("SendRequest error\n");
         return -1;
     }
-    int result = IpcIoPopInt32(&reply);
+    int32_t result = 0;
+    ReadInt32(&reply, &result);
     printf("execute add method, result is %d\n", result);
     if (ptr != 0) {
-        FreeBuffer(nullptr, reinterpret_cast<void *>(ptr));
+        FreeBuffer(reinterpret_cast<void *>(ptr));
     }
     return 0;
 }
