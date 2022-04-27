@@ -16,7 +16,7 @@ import("//build/ohos.gni")
 ohos_shared_library("aafwk") {
   include_dirs = [
     "//third_party/node/src",
-    "//foundation/ace/napi/interfaces/kits",
+    "//foundation/arkui/napi/interfaces/kits",
   ]
 
   cflags = [
@@ -28,7 +28,7 @@ ohos_shared_library("aafwk") {
 
   deps = [
     "//foundation/aafwk/aafwk_lite/frameworks/abilitymgr_lite:abilitymanager",
-    "//foundation/ace/napi/:ace_napi",
+    "//foundation/arkui/napi/:ace_napi",
     "//utils/native/base:utils",
   ]
 
