@@ -20,8 +20,7 @@
 
 #include "ability_event_handler.h"
 #include "nocopyable.h"
-#include "liteipc_adapter.h"
-#include "serializer.h"
+#include "ipc_skeleton.h"
 #include "want.h"
 
 namespace OHOS {
@@ -49,7 +48,7 @@ public:
     AbilityScheduler(AbilityEventHandler &eventHandler, Scheduler &scheduler);
     ~AbilityScheduler() override = default;
 
-    static int32_t AmsCallback(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg);
+    static int32_t AmsCallback(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option);
 
 private:
     void PerformAppInit(const AppInfo& appInfo);
@@ -58,7 +57,6 @@ private:
     void PerformDisconnectAbility(const Want &want, uint64_t token);
     void PerformAppExit();
     void PerformDumpAbility(const Want &want, uint64_t token);
-    static void ClearIpcMsg(void *ipcMsg);
 
     AbilityEventHandler &eventHandler_;
     Scheduler &scheduler_;

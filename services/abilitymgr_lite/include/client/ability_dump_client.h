@@ -16,7 +16,7 @@
 #ifndef OHOS_DUMP_ABILITY_CLIENT_H
 #define OHOS_DUMP_ABILITY_CLIENT_H
 
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "util/abilityms_status.h"
 #include "want.h"
 

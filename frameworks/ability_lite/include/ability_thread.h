@@ -57,6 +57,7 @@ private:
     static bool isNativeApp_;
     static bool isAppRunning_;
     static bool isDisplayInited_;
+    IpcObjectStub objectStub_;
 };
 } // namespace OHOS
 #endif // OHOS_ABILITY_THREAD_H

@@ -18,7 +18,7 @@
 #include "appspawn_service.h"
 #include "cJSON.h"
 #include "ohos_errno.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "samgr_lite.h"
 #include "securec.h"
 #include "util/abilityms_log.h"
@@ -33,7 +33,7 @@ static int Notify(IOwner owner, int code, IpcIo *reply)
         return EC_INVALID;
     }
     int64_t *result = reinterpret_cast<int64_t *>(owner);
-    *result = IpcIoPopInt64(reply);
+    ReadInt64(reply, result);
     return EC_SUCCESS;
 }
 
@@ -77,18 +77,9 @@ AbilityMsStatus AppSpawnClient::CallingInnerSpawnProcess(char *spawnMessage, App
     }
 
     IpcIo request;
-    char data[IPC_IO_DATA_MAX];
-#ifdef __LINUX__
-    IpcIoInit(&request, data, IPC_IO_DATA_MAX, 0);
-    IpcIoPushString(&request, spawnMessage);
-#else
-    IpcIoInit(&request, data, IPC_IO_DATA_MAX, 1);
-    BuffPtr dataBuff = {
-        .buffSz = strlen(spawnMessage) + 1, // include \0
-        .buff = spawnMessage,
-    };
-    IpcIoPushDataBuffWithFree(&request, &dataBuff, InnerFreeDataBuff);
-#endif
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&request, data, MAX_IO_SIZE, 0);
+    WriteString(&request, spawnMessage);
     pid_t pid = -1;
     int result = spawnClient_->Invoke(spawnClient_, ID_CALL_CREATE_SERVICE, &request, &pid, Notify);
     int retry = 0;

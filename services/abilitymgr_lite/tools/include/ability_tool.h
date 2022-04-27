@@ -17,7 +17,7 @@
 #define OHOS_ABILITY_TOOL_H
 
 #include <iproxy_client.h>
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "want.h"
 
 namespace OHOS {
@@ -38,7 +38,7 @@ private:
     bool InnerStopAbility();
     bool TerminateApp(IClientProxy *proxy) const;
     bool Dump(IClientProxy *proxy);
-    static int32_t AaCallback(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg);
+    static int32_t AaCallback(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option);
 
     ElementName elementName_ { nullptr, nullptr, nullptr };
     char *extra_ { nullptr };
@@ -46,6 +46,7 @@ private:
     bool dumpAll_ { false };
     SvcIdentity identity_ {};
     static const int MAX_OBJECTS = 2;
+    IpcObjectStub objectStub_;
 };
 } // namespace OHOS
 #endif // OHOS_ABILITY_TOOL_H

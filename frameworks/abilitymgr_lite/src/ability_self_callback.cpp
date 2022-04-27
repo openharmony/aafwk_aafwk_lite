@@ -20,13 +20,13 @@
 #include "ability_manager.h"
 #include "iproxy_client.h"
 #include "log.h"
+#include "rpc_errno.h"
 #include "samgr_lite.h"
 
 namespace OHOS {
 AbilitySelfCallback::~AbilitySelfCallback()
 {
     if (svcIdentity_ != nullptr) {
-        (void) UnregisterIpcCallback(*svcIdentity_);
         AdapterFree(svcIdentity_);
     }
 }
@@ -44,33 +44,21 @@ int32_t InnerCallback(const char *resultMessage, uint8_t resultCode, const IAbil
     return ERR_OK;
 }
 
-int32_t AbilitySelfCallback::Callback(const IpcContext *context, void *ipcMsg, IpcIo *io, void *arg)
+int32_t AbilitySelfCallback::Callback(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
 {
-    if (ipcMsg == nullptr) {
-        HILOG_ERROR(HILOG_MODULE_APP, "AbilitySelfCallback ipcMsg is nullptr");
-        return PARAM_NULL_ERROR;
-    }
-
-    if (io == nullptr) {
+    if (data == nullptr) {
         HILOG_ERROR(HILOG_MODULE_APP, "AbilitySelfCallback io is nullptr");
-        FreeBuffer(NULL, ipcMsg);
         return PARAM_NULL_ERROR;
     }
     IAbilityStartCallback iAbilityStartCallback = GetInstance().GetCallback();
     if (iAbilityStartCallback == nullptr) {
-        FreeBuffer(NULL, ipcMsg);
         return PARAM_NULL_ERROR;
     }
-    uint32_t callbackType = 0;
-    int32_t ret = GetCode(ipcMsg, &callbackType);
-    if (ret != LITEIPC_OK) {
-        FreeBuffer(NULL, ipcMsg);
-        HILOG_ERROR(HILOG_MODULE_APP, "AbilitySelfCallbck get callback type failed");
-        return GET_CALLBACK_TYPE_ERROR;
-    }
-    auto resultCode = static_cast<uint8_t>(IpcIoPopInt32(io));
-    FreeBuffer(NULL, ipcMsg);
-    if (callbackType == START_ABILITY_CALLBACK) {
+
+    int32_t ret = 0;
+    ReadInt32(data, &ret);
+    auto resultCode = static_cast<uint8_t>(ret);
+    if (code == START_ABILITY_CALLBACK) {
         return InnerCallback(START_ABILITY_SUCCESS, resultCode, iAbilityStartCallback);
     }
     HILOG_ERROR(HILOG_MODULE_APP, "AbilitySelfCallback get error callback type");
@@ -84,12 +72,13 @@ int32 AbilitySelfCallback::GenerateLocalServiceId()
         return CALLBACK_GENERATE_LOCAL_SERVICEID_FAILED;
     }
 
-    int32_t ret = RegisterIpcCallback(Callback, 0, IPC_WAIT_FOREVER, svcIdentity_, NULL);
-    if (ret != LITEIPC_OK) {
-        AdapterFree(svcIdentity_);
-        svcIdentity_ = nullptr;
-        return CALLBACK_GENERATE_LOCAL_SERVICEID_FAILED;
-    }
+    objectStub_.func = Callback;
+    objectStub_.args = NULL;
+    objectStub_.isRemote = false;
+    svcIdentity_->handle = IPC_INVALID_HANDLE;
+    svcIdentity_->token = SERVICE_TYPE_ANONYMOUS;
+    svcIdentity_->cookie = reinterpret_cast<uintptr_t>(&objectStub_);
+
     return ERR_OK;
 }
 

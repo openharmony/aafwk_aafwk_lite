@@ -19,7 +19,7 @@
 #include <securec.h>
 #ifdef OHOS_APPEXECFWK_BMS_BUNDLEMANAGER
 #include <string>
-#include <liteipc_adapter.h>
+#include "ipc_skeleton.h"
 #endif
 
 #include "log.h"
@@ -280,30 +280,25 @@ bool SerializeWant(IpcIo *io, const Want *want)
     }
 
     if (want->element == nullptr) {
-        IpcIoPushInt32(io, VALUE_NULL);
+        WriteInt32(io, VALUE_NULL);
     } else {
-        IpcIoPushInt32(io, VALUE_OBJECT);
+        WriteInt32(io, VALUE_OBJECT);
         if (!SerializeElement(io, want->element)) {
             return false;
         }
     }
-    IpcIoPushInt32(io, want->dataLength);
+    WriteInt32(io, want->dataLength);
     if (want->dataLength > 0) {
-#ifdef __LINUX__
-        IpcIoPushFlatObj(io, want->data, want->dataLength);
-#else
-        const BuffPtr buff = {
-            want->dataLength,
-            want->data,
-        };
-        IpcIoPushDataBuff(io, &buff);
-#endif
+        WriteBuffer(io, want->data, want->dataLength);
     }
     if (want->sid == nullptr) {
-        IpcIoPushInt32(io, VALUE_NULL);
+        WriteInt32(io, VALUE_NULL);
     } else {
-        IpcIoPushInt32(io, VALUE_OBJECT);
-        IpcIoPushSvc(io, want->sid);
+        WriteInt32(io, VALUE_OBJECT);
+        bool ret = WriteRemoteObject(io, want->sid);
+        if (!ret) {
+            return false;
+        }
     }
 
     return true;
@@ -315,7 +310,9 @@ bool DeserializeWant(Want *want, IpcIo *io)
         return false;
     }
 
-    if (IpcIoPopInt32(io) == VALUE_OBJECT) {
+    int ret = 0;
+    ReadInt32(io, &ret);
+    if (ret == VALUE_OBJECT) {
         want->element = reinterpret_cast<ElementName *>(AdapterMalloc(sizeof(ElementName)));
         if (want->element == nullptr ||
             memset_s(want->element, sizeof(ElementName), 0, sizeof(ElementName)) != EOK ||
@@ -324,42 +321,23 @@ bool DeserializeWant(Want *want, IpcIo *io)
             return false;
         }
     }
-    if (IpcIoPopInt32(io) > 0) {
-#ifdef __LINUX__
-        uint32_t size = 0;
-        void *data = IpcIoPopFlatObj(io, &size);
+    uint32_t size = 0;
+    ReadUint32(io, &size);
+    if (size > 0) {
+        void *data = (void*)ReadBuffer(io, (size_t)size);
         if (!SetWantData(want, data, size)) {
             ClearWant(want);
             return false;
         }
-#else
-        BuffPtr *buff = IpcIoPopDataBuff(io);
-        if (buff == nullptr) {
-            ClearWant(want);
-            return false;
-        }
-        if (!SetWantData(want, buff->buff, buff->buffSz)) {
-            FreeBuffer(nullptr, buff->buff);
-            ClearWant(want);
-            return false;
-        }
-        FreeBuffer(nullptr, buff->buff);
-#endif
     }
-    if (IpcIoPopInt32(io) == VALUE_OBJECT) {
-        auto sid = IpcIoPopSvc(io);
-        if ((sid == nullptr) || !SetWantSvcIdentity(want, *sid)) {
-#ifdef __LINUX__
-            AdapterFree(sid);
-            sid = nullptr;
-#endif
+    ReadInt32(io, &ret);
+    if (ret == VALUE_OBJECT) {
+        SvcIdentity svc;
+        bool ret = ReadRemoteObject(io, &svc);
+        if (!ret || !SetWantSvcIdentity(want, svc)) {
             ClearWant(want);
             return false;
         }
-#ifdef __LINUX__
-        AdapterFree(sid);
-        sid = nullptr;
-#endif
     }
 
     return true;

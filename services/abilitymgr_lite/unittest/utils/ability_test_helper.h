@@ -22,7 +22,7 @@
 #include <memory>
 #include <string>
 #include <want.h>
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 namespace OHOS {
     struct SliceRecord {
         std::string name;
@@ -38,7 +38,7 @@ namespace OHOS {
 
         static void InstallCallback(const uint8_t resultCode, const void *resultMessage);
         static void UninstallCallback(const uint8_t resultCode, const void *resultMessage);
-        static int32_t AbilityCallback(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg);
+        static int32_t AbilityCallback(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option);
         static bool TestInstall(const std::string &hap);
         static bool TestUnInstall(const std::string &bundleName);
         static bool TestStartAbility(const Want &want);
@@ -54,6 +54,7 @@ namespace OHOS {
 
         static SvcIdentity identity_;
         static IClientProxy *proxy_;
+        static IpcObjectStub objectStub_;
     };
 }
 

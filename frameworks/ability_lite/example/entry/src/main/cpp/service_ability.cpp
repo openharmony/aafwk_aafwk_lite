@@ -29,9 +29,13 @@ void ServiceAbility::MsgHandle(uint32_t funcId, IpcIo *request, IpcIo *reply)
     printf("ServiceAbility::MsgHandle, funcId is %u\n", funcId);
     int result = 0;
     if (funcId == 0) {
-        result = IpcIoPopInt32(request) + IpcIoPopInt32(request);
+        int32_t ret1 = 0;
+        ReadInt32(&request, &ret1);
+        int32_t ret2 = 0;
+        ReadInt32(&request, &ret2);
+        result = ret1 + ret2;
     }
     // push data
-    IpcIoPushInt32(reply, result);
+    WriteInt32(reply, result);
 }
 }
