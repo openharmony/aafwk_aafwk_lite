@@ -21,7 +21,6 @@
 #include "ability_thread.h"
 #include "ipc_skeleton_pri.h"
 #include "log.h"
-#include "ipc_skeleton.h"
 namespace {
     constexpr int HEX = 10;
 }
