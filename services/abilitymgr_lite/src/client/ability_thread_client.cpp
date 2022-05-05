@@ -138,6 +138,7 @@ AbilityMsStatus AbilityThreadClient::AppInitTransaction(const BundleInfo &bundle
         &reply, option, &ptr) != ERR_NONE) {
         return  AbilityMsStatus::AppTransanctStatus("app init ipc error");
     }
+    FreeBuffer((void *)ptr);
     return AbilityMsStatus::Ok();
 }
 

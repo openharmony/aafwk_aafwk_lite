@@ -67,7 +67,6 @@ int32_t AbilityScheduler::AmsCallback(uint32_t code, IpcIo *data, IpcIo *reply, 
                 }
             }
             scheduler->PerformAppInit(appInfo);
-            WriteInt32(reply, 0);
             break;
         }
         case SCHEDULER_ABILITY_LIFECYCLE: {

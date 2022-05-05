@@ -20,7 +20,7 @@
 
 #include "ability_thread.h"
 #include "log.h"
-
+#include "ipc_skeleton.h"
 namespace {
     constexpr int HEX = 10;
 }
@@ -30,7 +30,7 @@ int AbilityMain(const char *token)
     if (token == nullptr) {
         return -1;
     }
-
+    ResetIpc();
     char *endPtr = nullptr;
     errno = 0;
     uint64_t tokenId = std::strtoull(token, &endPtr, HEX);
