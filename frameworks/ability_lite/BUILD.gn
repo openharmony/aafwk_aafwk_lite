@@ -102,6 +102,7 @@ lite_library("ability") {
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
     "//foundation/communication/ipc/interfaces/innerkits/c/ipc/include",
+    "//foundation/communication/ipc/ipc/native/c/manager/include",
     "//third_party/bounds_checking_function/include",
     "//utils/native/lite/kv_store/innerkits",
     "//utils/native/lite/include",
