@@ -168,7 +168,7 @@ AbilityMsStatus AbilityThreadClient::ConnectAbility(const Want &want, uint64_t t
     MessageOption option;
     MessageOptionInit(&option);
     option.flags = TF_OP_ASYNC;
-    if (SendRequest(svcIdentity_, SCHEDULER_ABILITY_CONNECT, &req, nullptr, 
+    if (SendRequest(svcIdentity_, SCHEDULER_ABILITY_CONNECT, &req, nullptr,
         option, nullptr) != ERR_NONE) {
         return AbilityMsStatus::TaskStatus("connectAbility", "connectAbility exit ipc error");
     }

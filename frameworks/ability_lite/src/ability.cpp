@@ -259,9 +259,6 @@ int32_t Ability::MsgHandleInner(uint32_t code, IpcIo *data, IpcIo *reply, Messag
     }
     // call user method
     ability->MsgHandle(code, data, reply);
-
-
-
     return ERR_NONE;
 }
 } // namespace OHOS

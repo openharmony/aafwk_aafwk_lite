@@ -124,7 +124,7 @@ StoreArgs *AbilityServiceManager::RemoveStoreArgs(const IAbilityConnection *conn
 int32_t AbilityServiceManager::ConnectAbilityCallBack(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
 {
     // param check
-    StoreArgs *storeArgs = static_cast<StoreArgs *>(option.args); 
+    StoreArgs *storeArgs = static_cast<StoreArgs *>(option.args);
     if (storeArgs == nullptr || storeArgs->conn == nullptr ||
         storeArgs->conn->OnAbilityConnectDone == nullptr || storeArgs->conn->OnAbilityDisconnectDone == nullptr) {
         HILOG_ERROR(HILOG_MODULE_APP, "storeArgs or callback func or ipcMsg is null");
