@@ -35,7 +35,7 @@ lite_library("ability") {
     public_deps = [
       "${aafwk_lite_path}/frameworks/abilitymgr_lite:abilitymanager",
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_static",
-      "//utils/native/lite/kv_store:kv_store",
+      "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store:kv_store",
     ]
 
     defines = []
@@ -71,6 +71,7 @@ lite_library("ability") {
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
       "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
       "//utils/native/lite/kv_store:kv_store",
+      "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store:kv_store",
     ]
 
     defines = [ "OHOS_APPEXECFWK_BMS_BUNDLEMANAGER" ]
@@ -100,12 +101,11 @@ lite_library("ability") {
     "//foundation/graphic/ui/frameworks",
     "//foundation/graphic/surface/interfaces/kits",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
+    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store/innerkits",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
     "//foundation/communication/ipc/interfaces/innerkits/c/ipc/include",
     "//foundation/communication/ipc/ipc/native/c/manager/include",
     "//third_party/bounds_checking_function/include",
-    "//third_party/freetype/include",
-    "//utils/native/lite/kv_store/innerkits",
     "//utils/native/lite/include",
     "./include",
     "./",

@@ -27,7 +27,7 @@ lite_library("abilitymanager") {
     deps = [
       "${appexecfwk_lite_path}/frameworks/bundle_lite:bundle",
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_static",
-      "//foundation/ace/ace_engine_lite/frameworks:ace_lite",
+      "//foundation/arkui/ace_engine_lite/frameworks:ace_lite",
     ]
   } else {
     target_type = "shared_library"
@@ -67,9 +67,9 @@ lite_library("abilitymanager") {
     "${appexecfwk_lite_path}/frameworks/bundle_lite/include",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
     "//foundation/communication/ipc/interfaces/innerkits/c/ipc/include",
+    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store/innerkits",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
     "//third_party/bounds_checking_function/include",
-    "//utils/native/lite/kv_store/innerkits",
     "//utils/native/lite/include",
     "//utils/native/lite/memory/include",
     "./include",

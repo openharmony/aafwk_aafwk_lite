@@ -40,7 +40,7 @@ lite_library("abilityms") {
 
     deps = [
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_static",
-      "//foundation/ace/ace_engine_lite/frameworks:ace_lite",
+      "//foundation/arkui/ace_engine_lite/frameworks:ace_lite",
       "//foundation/distributedschedule/samgr_lite/samgr:samgr",
     ]
   } else {
