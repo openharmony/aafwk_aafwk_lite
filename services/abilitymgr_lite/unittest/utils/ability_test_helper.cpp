@@ -40,13 +40,17 @@ namespace OHOS {
 
     SvcIdentity AbilityTestHelper::identity_ = {};
     IClientProxy *AbilityTestHelper::proxy_ = nullptr;
+    IpcObjectStub AbilityTestHelper::objectStub_ = {};
 
     void AbilityTestHelper::Initialize()
     {
-        if (RegisterIpcCallback(AbilityCallback, 0, IPC_WAIT_FOREVER, &identity_, nullptr) != 0) {
-            printf("registerIpcCallback failed\n");
-            exit(-1);
-        }
+        objectStub_.func = AbilityCallback;
+        objectStub_.args = nullptr;
+        objectStub_.isRemote = false;
+        identity_.handle = IPC_INVALID_HANDLE;
+        identity_.token = SERVICE_TYPE_ANONYMOUS;
+        identity_.cookie = reinterpret_cast<uintptr_t>(&objectStub_);
+
         proxy_ = GetAbilityInnerFeature();
         if (proxy_ == nullptr) {
             exit(-1);
@@ -56,7 +60,6 @@ namespace OHOS {
 
     void AbilityTestHelper::UnInitialize()
     {
-        UnregisterIpcCallback(identity_);
         sleep(1);
     }
 
@@ -82,44 +85,27 @@ namespace OHOS {
         SemPost();
     }
 
-    int32_t AbilityTestHelper::AbilityCallback(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg)
+    int32_t AbilityTestHelper::AbilityCallback(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
     {
-        if (ipcMsg == nullptr) {
-            printf("ams call back error, ipcMsg is null\n");
-            return -1;
-        }
-        
-        uint32_t funcId = 0;
-        GetCode(ipcMsg, &funcId);
-        uint32_t flag = 0;
-        GetFlag(ipcMsg, &flag);
-        if (flag == LITEIPC_FLAG_ONEWAY) {
-            FreeBuffer(nullptr, ipcMsg);
-        }
-        switch (funcId)
+        switch (code)
         {
             case SCHEDULER_APP_INIT: {
                 ElementName element = {};
                 DeserializeElement(&element, data);
-                int ret = IpcIoPopInt32(data);
+                int32_t ret = 0;
+                ReadInt32(data, &ret);
                 printf("ams call back, start %s.%s ret = %d\n", element.bundleName, element.abilityName, ret);
                 ClearElement(&element);
                 g_result = (ret == EC_SUCCESS);
                 break;
             }
             case SCHEDULER_DUMP_ABILITY: {
-                BuffPtr *buff = IpcIoPopDataBuff(data);
-                if ((buff == nullptr) || (buff->buff == nullptr))
-                {
-                    printf("ams call back error, buff is empty\n");
-                    return false;
-                }
-                g_resultString = static_cast<char *>(buff->buff);
-                FreeBuffer(nullptr, buff->buff);
+                size_t len = 0;
+                g_resultString = reinterpret_cast<char *>(ReadString(data, &len));
                 break;
             }
             default: {
-                printf("ams call back error, funcId: %u\n", funcId);
+                printf("ams call back error, funcId: %u\n", code);
                 break;
             }
         }
@@ -167,9 +153,9 @@ namespace OHOS {
     bool AbilityTestHelper::TestTerminateApp(const std::string &bundleName)
     {
         IpcIo req;
-        char data[IPC_IO_DATA_MAX];
-        IpcIoInit(&req, data, IPC_IO_DATA_MAX, 0);
-        IpcIoPushString(&req, bundleName.c_str());
+        char data[MAX_IO_SIZE];
+        IpcIoInit(&req, data, MAX_IO_SIZE, 0);
+        WriteString(&req, bundleName.c_str());
         int32_t ret = proxy_->Invoke(proxy_, TERMINATE_APP, &req, nullptr, nullptr);
         sleep(2);
         return ret == EC_SUCCESS;
@@ -228,8 +214,8 @@ namespace OHOS {
     void AbilityTestHelper::TestDumpAbility(const ElementName &elementName)
     {
         IpcIo req;
-        char data[IPC_IO_DATA_MAX];
-        IpcIoInit(&req, data, IPC_IO_DATA_MAX, 2);
+        char data[MAX_IO_SIZE];
+        IpcIoInit(&req, data, MAX_IO_SIZE, 2);
         Want want = {};
         SetWantElement(&want, elementName);
         SetWantSvcIdentity(&want, identity_);

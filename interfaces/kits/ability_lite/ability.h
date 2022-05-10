@@ -194,7 +194,7 @@ private:
 #ifdef ABILITY_WINDOW_SUPPORT
     void DeliverAbilityLifecycle(Action action, const Want *want = nullptr);
 #endif
-    static int32_t MsgHandleInner(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg);
+    static int32_t MsgHandleInner(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option);
 
 #ifdef ABILITY_WINDOW_SUPPORT
     AbilitySliceManager *abilitySliceManager_ { nullptr };
@@ -205,6 +205,7 @@ private:
     uint64_t token_ { 0 };
     SvcIdentity *sid_ { nullptr };
     static const int MAX_OBJECTS = 6;
+    IpcObjectStub objectStub_;
 
     friend class AbilityThread;
 #ifdef ABILITY_WINDOW_SUPPORT

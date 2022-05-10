@@ -21,6 +21,7 @@
 #include "ability_service_manager.h"
 #include "abilityms_client.h"
 #include "ability_self_callback.h"
+#include "rpc_errno.h"
 
 extern "C" {
 const int DEFAULT_TOKEN = 1;
@@ -79,7 +80,7 @@ int DisconnectAbility(const IAbilityConnection *conn)
 {
     if (conn == nullptr) {
         HILOG_ERROR(HILOG_MODULE_APP, "conn is null, DisconnectAbility failed");
-        return LITEIPC_EINVAL;
+        return ERR_INVALID_PARAM;
     }
     return OHOS::AbilityServiceManager::GetInstance().DisconnectAbility(*conn, DEFAULT_TOKEN);
 }

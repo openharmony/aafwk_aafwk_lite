@@ -19,9 +19,8 @@
 #include <climits>
 
 #include "ability_thread.h"
-#include "liteipc_pri.h"
+#include "ipc_skeleton_pri.h"
 #include "log.h"
-
 namespace {
     constexpr int HEX = 10;
 }
@@ -31,8 +30,7 @@ int AbilityMain(const char *token)
     if (token == nullptr) {
         return -1;
     }
-
-    ResetLiteIpc();
+    ResetIpc();
     char *endPtr = nullptr;
     errno = 0;
     uint64_t tokenId = std::strtoull(token, &endPtr, HEX);

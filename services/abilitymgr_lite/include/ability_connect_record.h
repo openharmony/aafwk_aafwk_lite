@@ -16,7 +16,7 @@
 #ifndef OHOS_ABILITY_CONNECT_RECORD_H
 #define OHOS_ABILITY_CONNECT_RECORD_H
 
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "samgr_lite.h"
 
 namespace OHOS {

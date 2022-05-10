@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "ability_manager.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "nocopyable.h"
 
 namespace OHOS {
@@ -36,10 +36,11 @@ public:
     const IAbilityStartCallback GetCallback();
 private:
     AbilitySelfCallback() = default;
-    static int32_t Callback(const IpcContext *context, void *ipcMsg, IpcIo *io, void *arg);
+    static int32_t Callback(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option);
     int32_t GenerateLocalServiceId();
     IAbilityStartCallback iAbilityStartCallback_ { nullptr };
     SvcIdentity *svcIdentity_ { nullptr };
+    IpcObjectStub objectStub_;
 
     DISALLOW_COPY_AND_MOVE(AbilitySelfCallback);
 };

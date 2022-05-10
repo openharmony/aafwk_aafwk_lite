@@ -47,10 +47,11 @@ private:
     StoreArgs *AddStoreArgs(const IAbilityConnection &conn, void *storeArg);
     StoreArgs *GetStoreArgs(const IAbilityConnection &conn) const;
     StoreArgs *RemoveStoreArgs(const IAbilityConnection *conn, StoreArgs *storeArgs);
-    static int32_t ConnectAbilityCallBack(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg);
+    static int32_t ConnectAbilityCallBack(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option);
     static void ClearStore(StoreArgs *storeArgs);
     std::list<StoreArgs *> storeList_;
     std::mutex mutex_;
+    IpcObjectStub objectStub_;
 
     DISALLOW_COPY_AND_MOVE(AbilityServiceManager);
 };

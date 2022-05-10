@@ -24,9 +24,9 @@
 #include "app_record.h"
 #include "client/bundlems_client.h"
 #include "element_name_utils.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
+#include "rpc_errno.h"
 #include "securec.h"
-#include "serializer.h"
 #include "util/abilityms_helper.h"
 #include "utils.h"
 #include "want_utils.h"
@@ -34,7 +34,7 @@
 namespace OHOS {
 const int MAX_MODULE_SIZE = 16;
 AbilityThreadClient::AbilityThreadClient(uint64_t token, pid_t pid, const SvcIdentity &svcIdentity,
-    IpcMsgHandler handler) : token_(token), pid_(pid), svcIdentity_(svcIdentity), deathHandler_(handler)
+    OnRemoteDead handler) : token_(token), pid_(pid), svcIdentity_(svcIdentity), deathHandler_(handler)
 {
 }
 
@@ -45,7 +45,6 @@ AbilityThreadClient::AbilityThreadClient(const AbilityThreadClient &client)
 
 AbilityThreadClient::~AbilityThreadClient()
 {
-    UnregisterDeathCallback(svcIdentity_, cbid_);
 }
 
 AbilityMsStatus AbilityThreadClient::Initialize(const char *bundleName)
@@ -60,7 +59,7 @@ AbilityMsStatus AbilityThreadClient::Initialize(const char *bundleName)
         return AbilityMsStatus::AppTransanctStatus("memory alloc fail");
     }
     appInfo->svcIdentity = svcIdentity_;
-    if (RegisterDeathCallback(nullptr, svcIdentity_, deathHandler_, appInfo, &cbid_) != LITEIPC_OK) {
+    if (AddDeathRecipient(svcIdentity_, deathHandler_, appInfo, &cbid_) != 0) {
         AdapterFree(appInfo->bundleName);
         delete appInfo;
         return AbilityMsStatus::AppTransanctStatus("register death callback ipc error");
@@ -90,17 +89,20 @@ AbilityMsStatus AbilityThreadClient::AbilityTransaction(const TransactionState &
 {
     PRINTD("AbilityThreadClient", "start");
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, MAX_OBJECTS);
-    IpcIoPushInt32(&req, state.state);
-    IpcIoPushUint64(&req, state.token);
-    IpcIoPushInt32(&req, abilityType);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, MAX_OBJECTS);
+    WriteInt32(&req, state.state);
+    WriteUint64(&req, state.token);
+    WriteInt32(&req, abilityType);
     if (!SerializeWant(&req, &want)) {
         return AbilityMsStatus::AppTransanctStatus("SerializeWant failed");
     }
-    int32_t ret = Transact(nullptr, svcIdentity_, SCHEDULER_ABILITY_LIFECYCLE, &req,
-        nullptr, LITEIPC_FLAG_ONEWAY, nullptr);
-    if (ret != LITEIPC_OK) {
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    int32_t ret = SendRequest(svcIdentity_, SCHEDULER_ABILITY_LIFECYCLE, &req,
+        nullptr, option, nullptr);
+    if (ret != ERR_NONE) {
         return AbilityMsStatus::AppTransanctStatus("lifecycle ipc error");
     }
     return AbilityMsStatus::Ok();
@@ -114,34 +116,39 @@ AbilityMsStatus AbilityThreadClient::AppInitTransaction(const BundleInfo &bundle
         return AbilityMsStatus::AppTransanctStatus("app init invalid argument");
     }
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, 0);
-    IpcIoPushString(&req, bundleInfo.bundleName);
-    IpcIoPushString(&req, bundleInfo.codePath);
-    IpcIoPushString(&req, bundleInfo.dataPath);
-    IpcIoPushBool(&req, bundleInfo.isNativeApp);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, 0);
+    WriteString(&req, bundleInfo.bundleName);
+    WriteString(&req, bundleInfo.codePath);
+    WriteString(&req, bundleInfo.dataPath);
+    WriteBool(&req, bundleInfo.isNativeApp);
     // transact moduleName
-    IpcIoPushInt32(&req, bundleInfo.numOfModule);
+    WriteInt32(&req, bundleInfo.numOfModule);
     for (int i = 0; i < bundleInfo.numOfModule; i++) {
         if (bundleInfo.moduleInfos[i].moduleName != nullptr) {
-            IpcIoPushString(&req, bundleInfo.moduleInfos[i].moduleName);
+            WriteString(&req, bundleInfo.moduleInfos[i].moduleName);
         }
     }
     IpcIo reply;
     uintptr_t ptr;
-    if (Transact(nullptr, svcIdentity_, SCHEDULER_APP_INIT, &req,
-        &reply, LITEIPC_FLAG_DEFAULT, &ptr) != LITEIPC_OK) {
+    MessageOption option;
+    MessageOptionInit(&option);
+    if (SendRequest(svcIdentity_, SCHEDULER_APP_INIT, &req,
+        &reply, option, &ptr) != ERR_NONE) {
         return  AbilityMsStatus::AppTransanctStatus("app init ipc error");
     }
-    FreeBuffer(nullptr, reinterpret_cast<void *>(ptr));
+    FreeBuffer((void *)ptr);
     return AbilityMsStatus::Ok();
 }
 
 AbilityMsStatus AbilityThreadClient::AppExitTransaction()
 {
     PRINTD("AbilityThreadClient", "start");
-    if (Transact(nullptr, svcIdentity_, SCHEDULER_APP_EXIT, nullptr,
-        nullptr, LITEIPC_FLAG_ONEWAY, nullptr) != LITEIPC_OK) {
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    if (SendRequest(svcIdentity_, SCHEDULER_APP_EXIT, nullptr,
+        nullptr, option, nullptr) != ERR_NONE) {
         return AbilityMsStatus::AppTransanctStatus("app exit ipc error");
     }
     return AbilityMsStatus::Ok();
@@ -151,14 +158,17 @@ AbilityMsStatus AbilityThreadClient::ConnectAbility(const Want &want, uint64_t t
 {
     PRINTD("AbilityThreadClient", "connect");
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, MAX_OBJECTS);
-    IpcIoPushUint64(&req, token);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, MAX_OBJECTS);
+    WriteUint64(&req, token);
     if (!SerializeWant(&req, &want)) {
         return AbilityMsStatus::TaskStatus("connectAbility", "SerializeWant failed");
     }
-    if (Transact(nullptr, svcIdentity_, SCHEDULER_ABILITY_CONNECT, &req,
-        nullptr, LITEIPC_FLAG_ONEWAY, nullptr) != LITEIPC_OK) {
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    if (SendRequest(svcIdentity_, SCHEDULER_ABILITY_CONNECT, &req, nullptr,
+        option, nullptr) != ERR_NONE) {
         return AbilityMsStatus::TaskStatus("connectAbility", "connectAbility exit ipc error");
     }
     return AbilityMsStatus::Ok();
@@ -168,14 +178,17 @@ AbilityMsStatus AbilityThreadClient::DisconnectAbility(const Want &want, uint64_
 {
     PRINTD("AbilityThreadClient", "disconnect");
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, MAX_OBJECTS);
-    IpcIoPushUint64(&req, token);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, MAX_OBJECTS);
+    WriteUint64(&req, token);
     if (!SerializeWant(&req, &want)) {
         return AbilityMsStatus::TaskStatus("disconnectAbility", "SerializeWant failed");
     }
-    if (Transact(nullptr, svcIdentity_, SCHEDULER_ABILITY_DISCONNECT, &req, nullptr,
-        LITEIPC_FLAG_ONEWAY, nullptr) != LITEIPC_OK) {
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    if (SendRequest(svcIdentity_, SCHEDULER_ABILITY_DISCONNECT, &req, nullptr,
+        option, nullptr) != ERR_NONE) {
         return AbilityMsStatus::TaskStatus("disconnectAbility", "disconnectAbility exit ipc error");
     }
     return AbilityMsStatus::Ok();
@@ -186,15 +199,21 @@ AbilityMsStatus AbilityThreadClient::ConnectAbilityDone(const Want &want, const 
 {
     PRINTD("AbilityThreadClient", "connectDone");
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, 1);
-    IpcIoPushSvc(&req, &serviceSid);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, 1);
+    bool ret = WriteRemoteObject(&req, &serviceSid);
+    if (!ret) {
+        return AbilityMsStatus::TaskStatus("connectAbilityDone", "WriteRemoteObject failed");
+    }
     if (!SerializeElement(&req, want.element)) {
         return AbilityMsStatus::TaskStatus("connectAbilityDone", "SerializeElement failed");
     }
 
-    if (Transact(nullptr, connectSid, SCHEDULER_ABILITY_CONNECT, &req, nullptr,
-        LITEIPC_FLAG_ONEWAY, nullptr) != LITEIPC_OK) {
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    if (SendRequest(connectSid, SCHEDULER_ABILITY_CONNECT, &req, nullptr,
+        option, nullptr) != ERR_NONE) {
         return AbilityMsStatus::TaskStatus("connectAbilityDone", "connectAbilityDone ipc error");
     }
     return AbilityMsStatus::Ok();
@@ -204,22 +223,21 @@ AbilityMsStatus AbilityThreadClient::DisconnectAbilityDone(const Want &want, con
 {
     PRINTD("AbilityThreadClient", "disconnectDone");
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, 0);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, 0);
     if (!SerializeElement(&req, want.element)) {
         return AbilityMsStatus::TaskStatus("DisconnectAbilityDone", "SerializeElement failed");
     }
 
-    if (Transact(nullptr, connectSid, SCHEDULER_ABILITY_DISCONNECT, &req,
-        nullptr, LITEIPC_FLAG_ONEWAY, nullptr) != LITEIPC_OK) {
-#ifdef __LINUX__
-        BinderRelease(connectSid.ipcContext, connectSid.handle);
-#endif
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    if (SendRequest(connectSid, SCHEDULER_ABILITY_DISCONNECT, &req,
+        nullptr, option, nullptr) != ERR_NONE) {
+        ReleaseSvc(connectSid);
         return AbilityMsStatus::TaskStatus("disconnectAbilityDone", "disconnectAbilityDone ipc error");
     }
-#ifdef __LINUX__
-    BinderRelease(connectSid.ipcContext, connectSid.handle);
-#endif
+    ReleaseSvc(connectSid);
     return AbilityMsStatus::Ok();
 }
 
@@ -227,14 +245,16 @@ AbilityMsStatus AbilityThreadClient::DumpAbilityTransaction(const Want &want, ui
 {
     PRINTD("AbilityThreadClient", "start");
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, MAX_OBJECTS);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, MAX_OBJECTS);
     if (!SerializeWant(&req, &want)) {
         return AbilityMsStatus::TaskStatus("dumpAbility", "SerializeWant failed");
     }
-    IpcIoPushUint64(&req, token);
-    if (Transact(nullptr, svcIdentity_, SCHEDULER_DUMP_ABILITY, &req,
-        nullptr, LITEIPC_FLAG_ONEWAY, nullptr) != LITEIPC_OK) {
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    if (SendRequest(svcIdentity_, SCHEDULER_DUMP_ABILITY, &req,
+        nullptr, option, nullptr) != ERR_NONE) {
         return AbilityMsStatus::AppTransanctStatus("dump ability ipc error");
     }
     return AbilityMsStatus::Ok();

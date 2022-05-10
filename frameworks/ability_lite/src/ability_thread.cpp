@@ -38,8 +38,9 @@
 #include "ability_service_interface.h"
 #include "adapter.h"
 #include "element_name_utils.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "log.h"
+#include "rpc_errno.h"
 
 namespace OHOS {
 namespace {
@@ -139,13 +140,16 @@ void AbilityThread::StartAbilityCallback(const Want &want)
     }
     HILOG_INFO(HILOG_MODULE_APP, "start ability callback");
     IpcIo io;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&io, data, IPC_IO_DATA_MAX, 0);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&io, data, MAX_IO_SIZE, 0);
     if (!SerializeElement(&io, want.element)) {
         return;
     }
-    IpcIoPushInt32(&io, EC_SUCCESS);
-    if (Transact(nullptr, *(want.sid), SCHEDULER_APP_INIT, &io, nullptr, LITEIPC_FLAG_ONEWAY, nullptr) != LITEIPC_OK) {
+    WriteInt32(&io, EC_SUCCESS);
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    if (SendRequest(*(want.sid), SCHEDULER_APP_INIT, &io, nullptr, option, nullptr) != ERR_NONE) {
         HILOG_ERROR(HILOG_MODULE_APP, "start ability callback failed, ipc error");
     }
 }
@@ -293,24 +297,16 @@ void AbilityThread::PerformDumpAbility(const Want &want, uint64_t token)
     iter->second->Dump(extra);
     std::string dumpInfo = iter->second->GetDumpInfo();
     IpcIo io;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&io, data, IPC_IO_DATA_MAX, 1);
-#ifdef __LINUX__
-    IpcIoPushString(&io, dumpInfo.c_str());
-#else
-    BuffPtr dataBuff = {
-        .buffSz = dumpInfo.length() + 1,
-        .buff = const_cast<char *>(dumpInfo.c_str()),
-    };
-    IpcIoPushDataBuff(&io, &dataBuff);
-#endif
-    if (Transact(nullptr, *(want.sid), SCHEDULER_DUMP_ABILITY, &io, nullptr, LITEIPC_FLAG_ONEWAY, nullptr) !=
-        LITEIPC_OK) {
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&io, data, MAX_IO_SIZE, 1);
+    WriteString(&io, dumpInfo.c_str());
+    MessageOption option;
+    MessageOptionInit(&option);
+    option.flags = TF_OP_ASYNC;
+    if (SendRequest(*(want.sid), SCHEDULER_DUMP_ABILITY, &io, nullptr, option, nullptr) != ERR_NONE) {
         HILOG_ERROR(HILOG_MODULE_APP, "dump ability failed, ipc error");
     }
-#ifdef __LINUX__
-    BinderRelease(want.sid->ipcContext, want.sid->handle);
-#endif
+    ReleaseSvc(*(want.sid));
 }
 
 void AbilityThread::HandleLifecycleTransaction(Ability &ability, const Want &want, int state)
@@ -368,13 +364,13 @@ void AbilityThread::AttachBundle(uint64_t token)
         HILOG_ERROR(HILOG_MODULE_APP, "ams identity is null");
         return;
     }
-    int32_t ret = RegisterIpcCallback(AbilityScheduler::AmsCallback, 0, IPC_WAIT_FOREVER, identity_, abilityScheduler_);
-    if (ret != 0) {
-        HILOG_ERROR(HILOG_MODULE_APP, "RegisterIpcCallback failed");
-        AdapterFree(identity_);
-        return;
-    }
 
+    objectStub_.func = AbilityScheduler::AmsCallback;
+    objectStub_.args = (void*)abilityScheduler_;
+    objectStub_.isRemote = false;
+    identity_->handle = IPC_INVALID_HANDLE;
+    identity_->token = SERVICE_TYPE_ANONYMOUS;
+    identity_->cookie = reinterpret_cast<uintptr_t>(&objectStub_);
     AbilityMsClient::GetInstance().ScheduleAms(nullptr, token, identity_, ATTACH_BUNDLE);
 }
 

@@ -69,7 +69,7 @@ lite_library("ability") {
       "${aafwk_lite_path}/frameworks/abilitymgr_lite:abilitymanager",
       "${appexecfwk_lite_path}/frameworks/bundle_lite:bundle",
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-      "//foundation/communication/ipc_lite:liteipc_adapter",
+      "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
       "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store:kv_store",
     ]
 
@@ -102,8 +102,8 @@ lite_library("ability") {
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
     "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store/innerkits",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
-    "//foundation/communication/ipc_lite/frameworks/liteipc/include",
-    "//foundation/communication/ipc_lite/interfaces/kits",
+    "//foundation/communication/ipc/interfaces/innerkits/c/ipc/include",
+    "//foundation/communication/ipc/ipc/native/c/manager/include",
     "//third_party/bounds_checking_function/include",
     "//utils/native/lite/include",
     "./include",
@@ -143,6 +143,7 @@ config("abilitykit_config") {
     "${aafwk_lite_path}/interfaces/kits/want_lite",
     "${aafwk_lite_path}/interfaces/kits/ability_lite",
     "${aafwk_lite_path}/interfaces/kits/ability_lite/slite",
+    "//foundation/communication/ipc/interfaces/innerkits/c/ipc/include",
   ]
 }
 

@@ -45,7 +45,7 @@ executable("aa") {
     "${appexecfwk_lite_path}/frameworks/bundle_lite:bundle",
     "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
     "//build/lite/config/component/cJSON:cjson_shared",
-    "//foundation/communication/ipc_lite:liteipc_adapter",
+    "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
     "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store:kv_store",
     "//foundation/distributedschedule/samgr_lite/samgr:samgr",
   ]
@@ -66,7 +66,7 @@ executable("aa") {
     "${aafwk_lite_path}/frameworks/want_lite/include",
     "${appexecfwk_lite_path}/utils/bundle_lite",
     "${appexecfwk_lite_path}/interfaces/kits/bundle_lite",
-    "//foundation/communication/ipc_lite/interfaces/kits",
+    "//foundation/communication/ipc/interfaces/innerkits/c/ipc/include",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
     "//third_party/bounds_checking_function/include",

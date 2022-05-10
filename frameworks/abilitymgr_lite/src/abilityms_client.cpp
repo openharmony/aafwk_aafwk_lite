@@ -17,10 +17,9 @@
 
 #include "ability_errors.h"
 #include "ability_service_interface.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "log.h"
 #include "samgr_lite.h"
-#include "serializer.h"
 #include "want_utils.h"
 
 namespace OHOS {
@@ -65,10 +64,10 @@ int AbilityMsClient::SchedulerLifecycleDone(uint64_t token, int state) const
         return PARAM_NULL_ERROR;
     }
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, 0);
-    IpcIoPushUint64(&req, token);
-    IpcIoPushInt32(&req, state);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, 0);
+    WriteUint64(&req, token);
+    WriteInt32(&req, state);
     return amsProxy_->Invoke(amsProxy_, ABILITY_TRANSACTION_DONE, &req, nullptr, Callback);
 }
 
@@ -78,17 +77,20 @@ int AbilityMsClient::ScheduleAms(const Want *want, uint64_t token, const SvcIden
         return PARAM_NULL_ERROR;
     }
     IpcIo req;
-    char data[IPC_IO_DATA_MAX];
-    IpcIoInit(&req, data, IPC_IO_DATA_MAX, 3);
+    char data[MAX_IO_SIZE];
+    IpcIoInit(&req, data, MAX_IO_SIZE, 3);
     if (token != 0) {
-        IpcIoPushUint64(&req, token);
+        WriteUint64(&req, token);
     }
     if (sid != nullptr) {
-        IpcIoPushSvc(&req, sid);
+        bool ret = WriteRemoteObject(&req, sid);
+        if (!ret) {
+            return SERIALIZE_ERROR;
+        }
 #ifdef __LINUX__
         if (commandType == ATTACH_BUNDLE) {
             pid_t pid = getpid();
-            IpcIoPushUint64(&req, pid);
+            WriteUint64(&req, pid);
         }
 #endif
     }

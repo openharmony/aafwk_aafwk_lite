@@ -43,7 +43,7 @@
 #define OHOS_ABILITY_CONNECTION_H
 
 #include "element_name.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 
 typedef struct IAbilityConnection IAbilityConnection;
 

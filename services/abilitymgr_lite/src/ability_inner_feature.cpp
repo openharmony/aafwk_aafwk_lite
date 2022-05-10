@@ -112,7 +112,7 @@ BOOL AbilityInnerFeature::OnFeatureMessage(Feature *feature, Request *request)
 int32 AbilityInnerFeature::TerminateAppInvoke(const void *origin, IpcIo *req)
 {
     size_t len = 0;
-    char *bundleName = reinterpret_cast<char *>(IpcIoPopString(req, &len));
+    char *bundleName = reinterpret_cast<char *>(ReadString(req, &len));
     if (bundleName == nullptr || len == 0) {
         PRINTE("AbilityInnerFeature", "bundleName is null");
         return EC_INVALID;
@@ -159,9 +159,6 @@ int32 AbilityInnerFeature::DumpAbilityInvoke(const void *origin, IpcIo *req)
         ClearWant(&want);
         return EC_FAILURE;
     }
-#ifdef __LINUX__
-    BinderAcquire(want.sid->ipcContext, want.sid->handle);
-#endif
     auto client = new AbilityDumpClient(want);
     ClearWant(&want);
     Request request = {

@@ -27,7 +27,8 @@
 #include "ability_window.h"
 #endif
 #include "adapter.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
+#include "rpc_errno.h"
 
 namespace OHOS {
 void Ability::OnStart(const Want &want)
@@ -124,13 +125,12 @@ const SvcIdentity *Ability::OnConnect(const Want &want)
         HILOG_ERROR(HILOG_MODULE_APP, "malloc memory error, sid_ is null");
         return nullptr;
     }
-    int32_t ret = RegisterIpcCallback(Ability::MsgHandleInner, 0, IPC_WAIT_FOREVER, sid_, this);
-    if (ret != 0) {
-        HILOG_ERROR(HILOG_MODULE_APP, "register ipc callback error, ret is %{public}d", ret);
-        AdapterFree(sid_);
-        sid_ = nullptr;
-        return nullptr;
-    }
+    objectStub_.func = Ability::MsgHandleInner;
+    objectStub_.args = (void*)this;
+    objectStub_.isRemote = false;
+    sid_->handle = IPC_INVALID_HANDLE;
+    sid_->token = SERVICE_TYPE_ANONYMOUS;
+    sid_->cookie = reinterpret_cast<uintptr_t>(&objectStub_);
     return sid_;
 }
 
@@ -139,7 +139,6 @@ void Ability::OnDisconnect(const Want &want)
     HILOG_INFO(HILOG_MODULE_APP, "Ability OnDisconnect");
 
     // clear
-    UnregisterIpcCallback(*sid_);
     AdapterFree(sid_);
     sid_ = nullptr;
 }
@@ -251,35 +250,15 @@ void Ability::DeliverAbilityLifecycle(Action action, const Want *want)
 }
 #endif
 
-int32_t Ability::MsgHandleInner(const IpcContext* context, void *ipcMsg, IpcIo *data, void *arg)
+int32_t Ability::MsgHandleInner(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
 {
-    auto ability = static_cast<Ability *>(arg);
+    auto ability = static_cast<Ability *>(option.args);
     if (ability == nullptr) {
         HILOG_INFO(HILOG_MODULE_APP, "handle message error, ability is null");
-        FreeBuffer(nullptr, ipcMsg);
-        return LITEIPC_EINVAL;
+        return ERR_INVALID_PARAM;
     }
-    uint32_t fundId = 0;
-    int32_t ret = GetCode(ipcMsg, &fundId);
-    if (ret == LITEIPC_EINVAL) {
-        FreeBuffer(nullptr, ipcMsg);
-        return LITEIPC_EINVAL;
-    }
-
-    IpcIo reply;
-    char buffer[IPC_IO_DATA_MAX];
-    IpcIoInit(&reply, buffer, IPC_IO_DATA_MAX, MAX_OBJECTS);
-
     // call user method
-    ability->MsgHandle(fundId, data, &reply);
-
-    uint32_t flag = 0;
-    GetFlag(ipcMsg, &flag);
-    if (flag == LITEIPC_FLAG_DEFAULT) {
-        SendReply(nullptr, ipcMsg, &reply);
-    } else {
-        FreeBuffer(nullptr, ipcMsg);
-    }
-    return LITEIPC_OK;
+    ability->MsgHandle(code, data, reply);
+    return ERR_NONE;
 }
 } // namespace OHOS
