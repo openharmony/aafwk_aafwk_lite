@@ -70,7 +70,6 @@ lite_library("ability") {
       "${appexecfwk_lite_path}/frameworks/bundle_lite:bundle",
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
       "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
-      "//utils/native/lite/kv_store:kv_store",
       "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store:kv_store",
     ]
 
