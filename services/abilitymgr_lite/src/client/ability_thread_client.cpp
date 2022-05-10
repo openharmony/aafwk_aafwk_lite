@@ -45,7 +45,7 @@ AbilityThreadClient::AbilityThreadClient(const AbilityThreadClient &client)
 
 AbilityThreadClient::~AbilityThreadClient()
 {
-    RemoveDeathRecipient(svcIdentity_, cbid_);
+
 }
 
 AbilityMsStatus AbilityThreadClient::Initialize(const char *bundleName)
