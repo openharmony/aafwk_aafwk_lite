@@ -17,7 +17,7 @@
 #define OHOS_ABILITY_THREAD_CLIENT_H
 
 #include "bundle_info.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "util/abilityms_status.h"
 #include "want.h"
 
@@ -35,7 +35,7 @@ typedef struct {
 class AbilityRecord;
 class AbilityThreadClient {
 public:
-    AbilityThreadClient(uint64_t token, pid_t callingPid, const SvcIdentity &svcIdentity, IpcMsgHandler handler);
+    AbilityThreadClient(uint64_t token, pid_t callingPid, const SvcIdentity &svcIdentity, OnRemoteDead handler);
     AbilityThreadClient(const AbilityThreadClient &client);
     ~AbilityThreadClient();
 
@@ -57,7 +57,7 @@ private:
     pid_t pid_ = -1;
     uint32_t cbid_ = -1;
     const SvcIdentity svcIdentity_;
-    const IpcMsgHandler deathHandler_;
+    const OnRemoteDead deathHandler_;
     static const int MAX_OBJECTS = 2;
 };
 } // namespace OHOS
