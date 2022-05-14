@@ -274,6 +274,7 @@ int32_t AbilityService::ForceStop(char* bundlename)
 
 int32_t AbilityService::ForceStopBundleInner(uint16_t token)
 {
+    HILOG_INFO(HILOG_MODULE_AAFWK, "ForceStopBundleInner [%{public}u]", token);
     // free js mem and delete the record 
     AbilityRecord *record = abilityList_.Get(token);
     if (record == nullptr) {
@@ -281,6 +282,7 @@ int32_t AbilityService::ForceStopBundleInner(uint16_t token)
     }
     auto jsAppHost = const_cast<JsAppHost *>(record->GetJsAppHost());
     if (jsAppHost != nullptr) {
+        HILOG_ERROR(HILOG_MODULE_AAFWK, "ForceStopBundleInner jsAppHost is null.");
         // free js mem
         jsAppHost->ForceDestroy();
     }
