@@ -439,7 +439,7 @@ void AbilityService::OnActiveDone(uint16_t token)
 	        g_NativeAbility->GetState());
             return;
         }
-        if (topRecord->GetToken() != LAUNCHER_TOKEN) {
+        if (topRecord->GetToken() != LAUNCHER_TOKEN || topRecord->GetState() != SCHEDULE_ACTIVE) {
             if (topRecord->GetState() != SCHEDULE_BACKGROUND) {
                 APP_ERRCODE_EXTRA(EXCE_ACE_APP_START, EXCE_ACE_APP_START_LAUNCHER_EXIT_FAILED);
                 HILOG_ERROR(HILOG_MODULE_AAFWK, "Active launcher js bg fail");
