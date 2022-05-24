@@ -441,7 +441,7 @@ void AbilityService::OnActiveDone(uint16_t token)
         }
         if (topRecord->GetToken() != LAUNCHER_TOKEN) {
             if (topRecord->GetState() == SCHEDULE_ACTIVE) {
-                HILOG_ERROR(HILOG_MODULE_AAFWK, "Active launcher js bg fail, js state is %{public}d", 
+                HILOG_ERROR(HILOG_MODULE_AAFWK, "Active launcher js bg fail, js state is %{public}d",
                 topRecord->GetState());
                 return;
             }
