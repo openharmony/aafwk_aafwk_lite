@@ -440,6 +440,10 @@ void AbilityService::OnActiveDone(uint16_t token)
             return;
         }
         if (topRecord->GetToken() != LAUNCHER_TOKEN) {
+            int native_state = STATE_UNINITIALIZED;
+            if (g_NativeAbility != nullptr) {
+                g_NativeAbility->GetState() = native_state;
+            }
             if (topRecord->GetState() == SCHEDULE_ACTIVE) {
                 HILOG_ERROR(HILOG_MODULE_AAFWK,
                     "js is in active state, native state is %{public}d", g_NativeAbility->GetState());
