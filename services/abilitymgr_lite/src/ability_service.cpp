@@ -440,19 +440,19 @@ void AbilityService::OnActiveDone(uint16_t token)
             return;
         }
         if (topRecord->GetToken() != LAUNCHER_TOKEN) {
-            int native_state = STATE_UNINITIALIZED;
+            int abilityState = STATE_UNINITIALIZED;
             if (g_NativeAbility != nullptr) {
-                native_state = g_NativeAbility->GetState();
+                abilityState = g_NativeAbility->GetState();
             }
             if (topRecord->GetState() == SCHEDULE_ACTIVE) {
                 HILOG_ERROR(HILOG_MODULE_AAFWK,
-                    "js is in active state, native state is %{public}d", native_state);
+                    "js is in active state, native state is %{public}d", abilityState);
                 return;
             }
             if (topRecord->GetState() != SCHEDULE_BACKGROUND) {
                 APP_ERRCODE_EXTRA(EXCE_ACE_APP_START, EXCE_ACE_APP_START_LAUNCHER_EXIT_FAILED);
                 HILOG_ERROR(HILOG_MODULE_AAFWK,
-                    "Active launcher js bg fail, native state is %{public}d", native_state);
+                    "Active launcher js bg fail, native state is %{public}d", abilityState);
                 abilityStack_.PopAbility();
                 DeleteRecordInfo(topRecord->GetToken());
             } else if (topRecord->IsTerminated()) {
