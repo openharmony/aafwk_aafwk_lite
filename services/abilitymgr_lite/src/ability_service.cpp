@@ -460,7 +460,7 @@ void AbilityService::OnActiveDone(uint16_t token)
             }
         }
         return;
-    }x
+    }
     // the js app active
     if (topRecord->GetToken() == token) {
         APP_EVENT(MT_ACE_APP_ACTIVE);
