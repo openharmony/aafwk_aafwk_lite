@@ -135,7 +135,7 @@ lite_library("abilityms") {
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
     "//foundation/graphic/wms/interfaces/innerkits",
-    "//base/startup/appspawn_standard/interfaces/innerkits/include",
+    "//base/startup/appspawn/interfaces/innerkits/include",
     "//base/security/permission/interfaces/kits/permission_lite",
     "//base/security/permission/services/permission_lite/pms/include",
     "//third_party/bounds_checking_function/include",
